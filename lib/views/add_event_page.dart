@@ -109,10 +109,11 @@ class _AddEventPageState extends State<AddEventPage> {
         Provider.of<EventController>(context);
 
     return Scaffold(
-      appBar: addAppBar(context, 'Criar um relato', isCheck: true,
-          onPressed: () async {
-        bool created = await eventController.createEvent(
-            title, description, projectController.project!.id!, mediaList);
+      appBar: addAppBar(context, 'Criar um relato',
+          isCheck: true,
+          isLoading: eventController.isLoading, onPressed: () async {
+        bool created = await eventController.createEvent(context, title,
+            description, projectController.project!.id!, mediaList);
         if (!created) {
           return;
         }
@@ -125,12 +126,11 @@ class _AddEventPageState extends State<AddEventPage> {
       body: SingleChildScrollView(
         child: Form(
           key: eventController.formKey,
-          child: Column( 
+          child: Column(
             children: [
               // leadingImage(projectController),
               Padding(
-                padding:
-                    const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(8),
                 child: addEventForm(projectController),
               ),
               imageCarousel(imageList),
@@ -206,11 +206,12 @@ class _AddEventPageState extends State<AddEventPage> {
     return Column(
       children: [
         titleFormField(),
-        const SizedBox(height: 16,),
+        const SizedBox(
+          height: 16,
+        ),
         descriptionFormField(),
         Padding(
-          padding:
-              const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.only(bottom: 8),
           child: recordingPath == null
               ? buttonText(isRecording ? Icons.stop : Icons.mic,
                   isRecording ? 'Parar gravação' : 'Gravar áudio', recordAudio)
@@ -225,7 +226,8 @@ class _AddEventPageState extends State<AddEventPage> {
       onChanged: (value) {
         description = value;
       },
-      validator: (value) => validateNotNull('Descrição não pode ser vazia', value),
+      validator: (value) =>
+          validateNotNull('Descrição não pode ser vazia', value),
       cursorColor: AppColors.darkGreen,
       maxLines: 5,
       style: const TextStyle(

@@ -12,6 +12,7 @@ class EventController extends ChangeNotifier {
   Map<String, List<EventModel>> eventsInProject = {};
 
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
+  bool isLoading = false;
 
   init() async {
     await listOwnEvents();
@@ -41,22 +42,52 @@ class EventController extends ChangeNotifier {
     return eventsInProject[projectId] ?? [];
   }
 
-  Future<bool> createEvent(String? title, String? description, String projectId,
+  Future<bool> createEvent(
+      BuildContext context,
+      String? title,
+      String? description,
+      String projectId,
       List<CreateMedia> mediaList) async {
     if (formKey.currentState == null || !formKey.currentState!.validate()) {
       return false;
     }
-    EventModel e = await eventService.addEvent(
-        EventModel(
-          title: title,
-          text: description,
-          projectId: projectId,
-        ),
-        mediaList);
-    events.add(e);
+
+    isLoading = true;
     notifyListeners();
-    return true;
-    // await listOwnEvents();
+
+    try {
+      EventModel e = await eventService.addEvent(
+          EventModel(
+            title: title,
+            text: description,
+            projectId: projectId,
+          ),
+          mediaList);
+
+      events.add(e);
+      notifyListeners();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Relato criado com sucesso'),
+        ),
+      );
+
+      return true;
+    } catch (e, s) {
+      debugPrint('createEvent error: $e');
+      debugPrint('$s');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Não foi possível criar o relato. Tente novamente mais tarde.'),
+        ),
+      );
+      return false;
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
   }
 
   List<DateTime> getAllDates(List<EventModel> events) {
@@ -65,8 +96,8 @@ class EventController extends ChangeNotifier {
       if (e.createdAt == null) {
         continue;
       }
-      DateTime d = DateTime(
-          e.createdAt!.year, e.createdAt!.month, e.createdAt!.day);
+      DateTime d =
+          DateTime(e.createdAt!.year, e.createdAt!.month, e.createdAt!.day);
       dateSet.add(d);
     }
     return dateSet.toList()..sort((a, b) => b.compareTo(a));
