@@ -20,13 +20,13 @@ class ProjectController extends ChangeNotifier {
 
   File? selectedImage;
   CreateMedia? createMedia;
+  bool isLoading = false;
   TextEditingController nameController = TextEditingController();
   TextEditingController institutionController = TextEditingController();
   TextEditingController targetController = TextEditingController();
   TextEditingController descriptionController = TextEditingController();
   bool isOpen = false;
   GlobalKey<FormState> createProjectFormKey = GlobalKey<FormState>();
-
 
   init() async {
     await listProjects();
@@ -48,7 +48,8 @@ class ProjectController extends ChangeNotifier {
 
   Future listProjects() async {
     debugPrint("isAdmin: ${userController?.isSuperAdmin}");
-    projects = await projectService.listProjects(isAdmin: userController?.isSuperAdmin ?? false);
+    projects = await projectService.listProjects(
+        isAdmin: userController?.isSuperAdmin ?? false);
     debugPrint('events: ${projects.length}');
     notifyListeners();
   }
@@ -58,8 +59,15 @@ class ProjectController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Add a project to the local list and notify listeners.
+  void addLocalProject(ProjectModel p) {
+    projects.insert(0, p);
+    notifyListeners();
+  }
+
   Future createProject(BuildContext context) async {
-    if (createProjectFormKey.currentState == null || !createProjectFormKey.currentState!.validate()) return;
+    if (createProjectFormKey.currentState == null ||
+        !createProjectFormKey.currentState!.validate()) return;
     if (createMedia == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -73,19 +81,66 @@ class ProjectController extends ChangeNotifier {
     String target = targetController.text;
     String description = descriptionController.text;
     bool isOpen = this.isOpen;
-    
-    ProjectModel p = await projectService.addProject(
-        ProjectModel(
-          name: name,
-          institution: institution,
-          description: description,
-          target: target,
-          isOpen: isOpen,
-        ),
-        createMedia
-    );
-    projects.add(p);
+
+    isLoading = true;
     notifyListeners();
+
+    try {
+      ProjectModel p = await projectService.addProject(
+          ProjectModel(
+            name: name,
+            institution: institution,
+            description: description,
+            target: target,
+            isOpen: isOpen,
+          ),
+          createMedia);
+
+      projects.add(p);
+      notifyListeners();
+
+      // Show success message including project name
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Projeto "${p.name}" criado com sucesso'),
+        ),
+      );
+
+      // Clear form fields and state
+      nameController.clear();
+      institutionController.clear();
+      targetController.clear();
+      descriptionController.clear();
+      selectedImage = null;
+      createMedia = null;
+      this.isOpen = false;
+      // Reset form state if possible
+      try {
+        createProjectFormKey.currentState?.reset();
+      } catch (_) {}
+
+      notifyListeners();
+
+      // Close the create project page and return to previous screen
+      try {
+        Navigator.pop(context, p);
+      } catch (_) {}
+    } catch (e, s) {
+      // Log technical error for debugging
+      debugPrint('createProject error: $e');
+      debugPrint('$s');
+
+      // Show friendly error message to the end user
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Não foi possível criar o projeto. Tente novamente mais tarde.'),
+        ),
+      );
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
   }
 
   void setIsOpen(bool open) {

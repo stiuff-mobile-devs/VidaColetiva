@@ -20,49 +20,63 @@ class _ProjectPageState extends State<ProjectPage> {
     final ProjectController projectController =
         Provider.of<ProjectController>(context);
     final UserController userController = Provider.of<UserController>(context);
+    final project = projectController.project;
+
     return Scaffold(
       appBar: mainAppBar(context, leading: true, profile: false),
       // endDrawer: mainDrawer(context)
       floatingActionButton: addEventButton(),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            leadingImage(projectController),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                children: [
-                  aboutText(projectController),
-                  const SizedBox(
-                    height: 10,
-                  ),
-                  if (userController.isSuperAdmin)
-                    allEventButton(context, projectController.project!.id),
-                    const SizedBox(
-                    height: 10,
-                  ),
-                  myContributions(),
-                ],
+      body: project == null
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'Projeto indisponível no momento.',
+                  style: TextStyle(fontSize: 18, color: AppColors.darkGreen),
+                  textAlign: TextAlign.center,
+                ),
               ),
             )
-          ],
-        ),
-      ),
+          : SingleChildScrollView(
+              child: Column(
+                children: [
+                  leadingImage(projectController),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      children: [
+                        aboutText(projectController),
+                        const SizedBox(
+                          height: 10,
+                        ),
+                        if (userController.isSuperAdmin)
+                          allEventButton(context, project.id),
+                        const SizedBox(
+                          height: 10,
+                        ),
+                        myContributions(),
+                      ],
+                    ),
+                  )
+                ],
+              ),
+            ),
     );
   }
 
   Widget leadingImage(ProjectController projectController) {
     return Stack(
       children: [
-        projectController.project!.media != null
+        projectController.project?.media != null
             ? FutureBuilder(
-                future: projectController.project!.mediaModel!.getUrl(),
+                future: projectController.project?.mediaModel?.getUrl(),
                 builder: (context, snapshot) {
                   if (snapshot.data == null) {
                     return const CircularProgressIndicator();
                   }
                   return Hero(
-                    tag: "${projectController.project!.name}_image",
+                    tag:
+                        "${projectController.project?.name ?? 'projeto'}_image",
                     child: Container(
                       height: 300,
                       decoration: BoxDecoration(
@@ -107,10 +121,9 @@ class _ProjectPageState extends State<ProjectPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.only(
-                      bottom: 8,
-                      left: 8),
-                  child: Text(projectController.project!.name ?? "Nome do projeto",
+                  padding: const EdgeInsets.only(bottom: 8, left: 8),
+                  child: Text(
+                      projectController.project?.name ?? "Nome do projeto",
                       style: const TextStyle(
                           color: Colors.white,
                           fontSize: 24,
@@ -128,7 +141,8 @@ class _ProjectPageState extends State<ProjectPage> {
     return Row(
       children: [
         Flexible(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             const Text('Sobre',
                 style: TextStyle(
                     color: AppColors.darkGreen,
@@ -136,10 +150,10 @@ class _ProjectPageState extends State<ProjectPage> {
                     fontWeight: FontWeight.bold,
                     letterSpacing: -0.5)),
             Text(
-                (projectController.project!.description != null &&
+                (projectController.project?.description != null &&
                         projectController.project!.description!.isNotEmpty)
                     ? projectController.project!.description!
-                    : "Não há descrição para o projeto ${projectController.project!.name}",
+                    : "Não há descrição para o projeto ${projectController.project?.name}",
                 style: const TextStyle(
                     color: AppColors.darkGreen,
                     fontSize: 16,

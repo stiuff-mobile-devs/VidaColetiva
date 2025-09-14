@@ -21,7 +21,8 @@ class _AddProjectPageState extends State<AddProjectPage> {
     return Scaffold(
       appBar: addAppBar(context, 'Criar um projeto',
           onPressed: () => projectController.createProject(context),
-          isCheck: true),
+          isCheck: true,
+          isLoading: projectController.isLoading),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(8.0),

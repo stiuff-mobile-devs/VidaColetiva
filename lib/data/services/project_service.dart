@@ -18,7 +18,8 @@ class ProjectService {
     return _projectRepository.listProjects(isAdmin);
   }
 
-  Future<ProjectModel> addProject(ProjectModel project, CreateMedia? createMedia) async {
+  Future<ProjectModel> addProject(
+      ProjectModel project, CreateMedia? createMedia) async {
     if (createMedia != null) {
       project.media = createMedia.fileName;
     }
@@ -38,6 +39,21 @@ class ProjectService {
       uploadTasks.add(uploadTask);
       await Future.wait(uploadTasks)
           .then((value) => debugPrint("finalizado o upload de arquivos"));
+      // Ensure the returned project has mediaModel populated and its URL resolved
+      try {
+        e.media = createMedia.fileName;
+        e.mediaModel = ProjectMediaModel.fromFirebase(e, createMedia.fileName);
+        // Await the URL fetch so callers receive a project with a ready mediaModel
+        await e.mediaModel!.getUrl();
+      } catch (ex) {
+        debugPrint(
+            'Warning: failed to populate mediaModel for project ${e.id}: $ex');
+      }
+    }
+
+    // Ensure name is not null when possible; fallback to a safe placeholder
+    if (e.name == null || e.name!.isEmpty) {
+      e.name = project.name ?? 'Projeto';
     }
 
     return e;

@@ -19,15 +19,27 @@ class Home2Page extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          const SizedBox(height: 20,),
+          const SizedBox(
+            height: 20,
+          ),
           imageCarousel(context),
-          const Divider(height: 2,),
+          const Divider(
+            height: 2,
+          ),
           if (userController.isSuperAdmin)
             Padding(
               padding: EdgeInsets.symmetric(
                   vertical: MediaQuery.of(context).size.height / 50),
-              child: addButton(context, () {
-                Navigator.pushNamed(context, '/add_project');
+              child: addButton(context, () async {
+                // Open add project page and wait for the created project to be returned
+                final result =
+                    await Navigator.pushNamed(context, '/add_project');
+                if (result != null && result is ProjectModel) {
+                  final ProjectController projectController =
+                      Provider.of<ProjectController>(context, listen: false);
+                  // Insert the new project at the beginning of the list and update UI
+                  projectController.addLocalProject(result);
+                }
               }, 'Adicionar Projeto', AppColors.primaryOrange),
             ),
           recentProjects(context),
@@ -54,14 +66,13 @@ class Home2Page extends StatelessWidget {
 
     return CarouselSlider(
         options: CarouselOptions(
-          height: 200,
-          viewportFraction: 0.8,
-          autoPlay: true,
-          autoPlayInterval: const Duration(seconds: 5),
-          autoPlayAnimationDuration: const Duration(milliseconds: 1000),
-          clipBehavior: Clip.hardEdge,
-          enlargeCenterPage: true
-        ),
+            height: 200,
+            viewportFraction: 0.8,
+            autoPlay: true,
+            autoPlayInterval: const Duration(seconds: 5),
+            autoPlayAnimationDuration: const Duration(milliseconds: 1000),
+            clipBehavior: Clip.hardEdge,
+            enlargeCenterPage: true),
         items: carouselImages);
   }
 
@@ -74,10 +85,8 @@ class Home2Page extends StatelessWidget {
         Navigator.pushNamed(context, '/project');
       },
       child: CarouselCard(
-        imageUrl: project.media != null
-            ? project.mediaModel!.getUrl()
-            : null,
-        title: project.name!,
+        imageUrl: project.media != null ? project.mediaModel?.getUrl() : null,
+        title: project.name ?? 'Projeto',
       ),
     );
   }
@@ -90,13 +99,9 @@ class Home2Page extends StatelessWidget {
         const Align(
             alignment: Alignment.centerLeft,
             child: Padding(
-              padding: EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 8),
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
               child: Text('Projetos Recentes',
-                  style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold)),
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             )),
         ProjectsCarousel(
           cardColor: AppColors.secondaryOrange,
