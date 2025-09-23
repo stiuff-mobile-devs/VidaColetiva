@@ -5,6 +5,13 @@ import 'package:vidacoletiva/data/repositories/user_repository.dart';
 import 'package:vidacoletiva/data/services/login_service.dart';
 
 class UserController extends ChangeNotifier {
+  /// Aceita o termo de consentimento e salva no backend
+  Future<void> acceptTermo() async {
+    if (user == null) return;
+    user!.termo = true;
+    await _userRepository.updateUser(user!.toJson());
+    notifyListeners();
+  }
   final LoginService _loginService;
   final UserRepository _userRepository = UserRepository();
 

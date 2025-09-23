@@ -101,7 +101,7 @@ class _EditProfileDataState extends State<EditProfileData> {
       if (birthDate != null) 'born_at': birthDate,
     };
     await userController.save(data);
-    Navigator.pop(context);
+    Navigator.of(context).pushReplacementNamed('/home');
   }
 
   @override

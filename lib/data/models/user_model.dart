@@ -14,6 +14,8 @@ class UserModel {
   late bool isAdmin;
   List<EventModel>? events;
   List<String>? acceptedEulas;
+  bool termo = false;
+
 
   UserModel();
 
@@ -26,10 +28,19 @@ class UserModel {
     state = json['state'];
     isAdmin = json['is_admin'] ?? false;
     if (json['born_at'] != null) {
-      bornAt = (json['born_at'] as Timestamp).toDate();
+      if (json['born_at'] is Timestamp) {
+        bornAt = (json['born_at'] as Timestamp).toDate();
+      } else if (json['born_at'] is String) {
+        bornAt = DateTime.tryParse(json['born_at']);
+      } else if (json['born_at'] is DateTime) {
+        bornAt = json['born_at'];
+      } else {
+        bornAt = null;
+      }
     }
     countyName = json['county_name'];
     acceptedEulas = json['accepted_eulas'];
+    termo = json['termo'] ?? false;
   }
 
   UserModel.fromQueryDocumentSnapshot(
@@ -45,9 +56,18 @@ class UserModel {
     state = json['state'];
     isAdmin = json['is_admin'] ?? false;
     if (json['born_at'] != null) {
-      bornAt = (json['born_at'] as Timestamp).toDate();
+      if (json['born_at'] is Timestamp) {
+        bornAt = (json['born_at'] as Timestamp).toDate();
+      } else if (json['born_at'] is String) {
+        bornAt = DateTime.tryParse(json['born_at']);
+      } else if (json['born_at'] is DateTime) {
+        bornAt = json['born_at'];
+      } else {
+        bornAt = null;
+      }
     }
     acceptedEulas = json['accepted_eulas'];
+    termo = json['termo'] ?? false;
   }
 
   toJson() {
@@ -58,7 +78,8 @@ class UserModel {
       "state": state,
       "county": county,
       "gender": gender,
-      "born_at": bornAt.toString()
+      "born_at": bornAt.toString(),
+      "termo": termo,
     };
     return json;
   }
