@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:vidacoletiva/controllers/user_controller.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:flutter/services.dart';
+import 'package:vidacoletiva/utils/eula.dart';
 
 import '../assets/colour_pallete.dart';
 
@@ -47,24 +50,212 @@ Widget mainDrawer(BuildContext context) {
           ),
           child: Center(
             child: Text('Olá! ${userController.getDisplayName().split(' ')[0]}',
-              style: TextStyle(
-                color: AppColors.darkGreen,
-                fontSize: MediaQuery.of(context).size.height / 30,
-                fontWeight: FontWeight.bold)
-            ),
+                style: TextStyle(
+                    color: AppColors.darkGreen,
+                    fontSize: MediaQuery.of(context).size.height / 30,
+                    fontWeight: FontWeight.bold)),
           ),
         ),
         textButton('Perfil', context, () {
           Navigator.pushNamed(context, '/profile');
         }),
         // textButton('Preferências', context, () {}),
-        // textButton('Sobre o app', context, () {}),
-        // textButton('Termos legais', context, () {}),
-        // textButton('Avaliar app', context, () {}),
-        if (userController.isSuperAdmin) textButton('Administração', context, () {
-          Navigator.pushNamed(context, '/admin');
+        textButton('Sobre o app', context, () {
+          _showAboutApp(context);
         }),
+        textButton('Termos legais', context, () {
+          _showEula(context);
+        }),
+        // textButton('Avaliar app', context, () {}),
+        if (userController.isSuperAdmin)
+          textButton('Administração', context, () {
+            Navigator.pushNamed(context, '/admin');
+          }),
         textButton('Sair', context, userController.logout),
+      ],
+    ),
+  );
+}
+
+Future<void> _showAboutApp(BuildContext context) async {
+  final outerContext = context;
+  String version = 'desconhecida';
+  try {
+    final info = await PackageInfo.fromPlatform();
+    version = info.version;
+  } catch (_) {}
+
+  final email = 'projetorelatoscotidianos.coc.esr@id.uff.br';
+  final site = 'vidacoletiva.uff.br';
+  final double titleFont = 22;
+  final double bodyFont = 18;
+  final double contactFont = 20;
+
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Text(
+        'Sobre o app',
+        style: TextStyle(
+          color: AppColors.darkGreen,
+          fontSize: titleFont,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'O aplicativo é desenvolvido pelo laboratório no.ar da UFF e conta com a parceria da STI‑UFF.',
+            style: TextStyle(
+              fontSize: bodyFont,
+              color: Colors.black87,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            'Dúvidas ou sugestões:',
+            style: TextStyle(
+              fontSize: bodyFont,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          InkWell(
+            onTap: () {
+              Clipboard.setData(ClipboardData(text: email));
+              Navigator.of(context).pop();
+              ScaffoldMessenger.of(outerContext).showSnackBar(
+                SnackBar(content: Text('Email copiado: $email')),
+              );
+            },
+            child: Row(
+              mainAxisSize: MainAxisSize.max,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Icon(Icons.email,
+                    color: AppColors.primaryOrange, size: contactFont + 6),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    email,
+                    style: TextStyle(
+                      color: AppColors.primaryOrange,
+                      decoration: TextDecoration.underline,
+                      fontSize: contactFont,
+                      fontWeight: FontWeight.w700,
+                      height: 1.2,
+                    ),
+                    softWrap: true,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Mais informações:',
+            style: TextStyle(
+              fontSize: bodyFont,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          InkWell(
+            onTap: () {
+              Clipboard.setData(ClipboardData(text: site));
+              Navigator.of(context).pop();
+              ScaffoldMessenger.of(outerContext).showSnackBar(
+                SnackBar(content: Text('Link copiado: $site')),
+              );
+            },
+            child: Row(
+              mainAxisSize: MainAxisSize.max,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Icon(Icons.link,
+                    color: AppColors.primaryOrange, size: contactFont + 4),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    site,
+                    style: TextStyle(
+                      color: AppColors.primaryOrange,
+                      decoration: TextDecoration.underline,
+                      fontSize: contactFont - 2,
+                      fontWeight: FontWeight.w600,
+                      height: 1.2,
+                    ),
+                    softWrap: true,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            'Versão: $version',
+            style: TextStyle(
+              fontSize: bodyFont - 2,
+              color: Colors.black54,
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('OK'),
+        ),
+      ],
+    ),
+  );
+}
+
+Future<void> _showEula(BuildContext context) async {
+  final outerContext = context;
+  final double titleFont = 20;
+  final double bodyFont = 16;
+
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      title: Text(
+        'Termos e Consentimento',
+        style: TextStyle(
+          color: AppColors.darkGreen,
+          fontSize: titleFont,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      content: SizedBox(
+        width: double.maxFinite,
+        height: MediaQuery.of(context).size.height * 0.6,
+        child: Scrollbar(
+          thumbVisibility: true,
+          child: SingleChildScrollView(
+            child: Text(
+              Eula.eulaText,
+              style: TextStyle(
+                fontSize: bodyFont,
+                color: Colors.black87,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text('Fechar', style: TextStyle(fontSize: bodyFont - 1)),
+        ),
       ],
     ),
   );
