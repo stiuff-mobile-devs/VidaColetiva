@@ -119,10 +119,6 @@ class _AddEventPageState extends State<AddEventPage> {
         }
         Navigator.pop(context);
       }),
-      floatingActionButton: CustomFloatingActionButton(
-        onClickCamera: takePhoto,
-        onClickGallery: pickImageFromGallery,
-      ),
       body: SingleChildScrollView(
         child: Form(
           key: eventController.formKey,
@@ -328,38 +324,86 @@ class _AddEventPageState extends State<AddEventPage> {
   }
 
   Widget imageCarousel(List<File> imageFiles) {
-    return imageFiles.isNotEmpty
-        ? Padding(
-            padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).size.height / 15),
-            child: SizedBox(
-              height: 250, // Altura do carrossel
-              child: PageView.builder(
-                itemCount: imageFiles.length,
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16.0),
-                      child: Image.file(
-                        imageFiles[index],
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  );
-                },
+    final Widget addButtons = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: takePhoto,
+              icon: const Icon(Icons.camera_alt),
+              label: const Text('Câmera'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.darkGreen,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                elevation: 3,
               ),
             ),
-          )
-        : Padding(
-            padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).size.height / 15),
-            child: const Center(
-              child: Text(
-                "Adicione uma imagem",
-                style: TextStyle(fontSize: 16, color: Colors.grey),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: pickImageFromGallery,
+              icon: const Icon(Icons.photo_library),
+              label: const Text('Galeria'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.darkGreen,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                elevation: 3,
               ),
             ),
-          );
+          ),
+        ],
+      ),
+    );
+
+    return Column(
+      children: [
+        imageFiles.isNotEmpty
+            ? Padding(
+                // reduzido bottom para aproximar os botões
+                padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).size.height / 40),
+                child: SizedBox(
+                  height: 180, // reduzida a altura do carrossel
+                  child: PageView.builder(
+                    itemCount: imageFiles.length,
+                    itemBuilder: (context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16.0),
+                          child: Image.file(
+                            imageFiles[index],
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              )
+            : Padding(
+                // reduzido bottom para aproximar os botões
+                padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).size.height / 40),
+                child: const Center(
+                  child: Text(
+                    "Adicione uma imagem",
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
+                ),
+              ),
+        addButtons,
+      ],
+    );
   }
 }
