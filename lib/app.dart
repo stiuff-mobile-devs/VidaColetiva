@@ -9,6 +9,7 @@ import 'package:vidacoletiva/resources/assets/colour_pallete.dart';
 import 'package:vidacoletiva/views/add_event_page.dart';
 import 'package:vidacoletiva/views/add_project_page.dart';
 import 'package:vidacoletiva/views/admin_page.dart';
+import 'package:vidacoletiva/views/admin_users_page.dart';
 import 'package:vidacoletiva/views/all_events_on_project_page.dart';
 import 'package:vidacoletiva/views/edit_profile_data.dart';
 import 'package:vidacoletiva/views/events_page.dart';
@@ -24,7 +25,6 @@ class VidaColetiva extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return MultiProvider(
         providers: [
           ChangeNotifierProvider<UserController>(
@@ -33,8 +33,9 @@ class VidaColetiva extends StatelessWidget {
               create: (_) => EventController(GetIt.I.get())..init()),
           ChangeNotifierProxyProvider<UserController, ProjectController>(
             create: (_) => ProjectController(_, GetIt.I.get(), null),
-            update: (_, userController, __) => ProjectController(_, GetIt.I.get(), userController)..init(),
-        ),
+            update: (_, userController, __) =>
+                ProjectController(_, GetIt.I.get(), userController)..init(),
+          ),
         ],
         builder: (context, child) {
           return MaterialApp(
@@ -95,6 +96,7 @@ class VidaColetiva extends StatelessWidget {
               '/profile_data': (context) => const ProfileData(),
               '/profile_data_edit': (context) => const EditProfileData(),
               '/admin': (context) => AdminPage(),
+              '/admin_users': (context) => const AdminUsersPage(),
             },
             // home: const RedirectionPage(),
           );
