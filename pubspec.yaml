@@ -2,7 +2,7 @@ name: vidacoletiva
 description: "A new Flutter project."
 publish_to: 'none'
 
-version: 2.7.1+47
+version: 2.8.0+48
 
 environment:
   sdk: '>=3.2.3 <4.0.0'
