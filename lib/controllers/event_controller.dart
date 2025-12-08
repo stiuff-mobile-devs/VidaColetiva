@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:vidacoletiva/data/models/event_model.dart';
 import 'package:vidacoletiva/data/models/media_model.dart';
 import 'package:vidacoletiva/data/services/event_service.dart';
+import 'package:vidacoletiva/services/analytics_service.dart';
 
 class EventController extends ChangeNotifier {
   EventService eventService;
@@ -66,6 +67,9 @@ class EventController extends ChangeNotifier {
 
       events.add(e);
       notifyListeners();
+
+      // Log analytics event
+      AnalyticsService.logEventCreation(title ?? 'unknown');
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

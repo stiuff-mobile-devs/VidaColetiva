@@ -6,6 +6,7 @@ import 'package:vidacoletiva/controllers/event_controller.dart';
 import 'package:vidacoletiva/controllers/project_controller.dart';
 import 'package:vidacoletiva/controllers/user_controller.dart';
 import 'package:vidacoletiva/resources/assets/colour_pallete.dart';
+import 'package:vidacoletiva/services/analytics_service.dart';
 import 'package:vidacoletiva/views/add_event_page.dart';
 import 'package:vidacoletiva/views/add_project_page.dart';
 import 'package:vidacoletiva/views/admin_page.dart';
@@ -19,6 +20,20 @@ import 'package:vidacoletiva/views/profile_data.dart';
 import 'package:vidacoletiva/views/profile_page.dart';
 import 'package:vidacoletiva/views/project_page.dart';
 import 'package:vidacoletiva/views/redirection_page.dart';
+
+class _AnalyticsNavigatorObserver extends NavigatorObserver {
+  @override
+  void didPush(Route route, Route? previousRoute) {
+    AnalyticsService.logScreenView(route.settings.name ?? 'unknown');
+  }
+
+  @override
+  void didPop(Route route, Route? previousRoute) {
+    if (previousRoute != null) {
+      AnalyticsService.logScreenView(previousRoute.settings.name ?? 'unknown');
+    }
+  }
+}
 
 class VidaColetiva extends StatelessWidget {
   const VidaColetiva({Key? key}) : super(key: key);
@@ -83,6 +98,7 @@ class VidaColetiva extends StatelessWidget {
               ),
             ),
             initialRoute: '/',
+            navigatorObservers: [_AnalyticsNavigatorObserver()],
             routes: {
               '/': (context) => const RedirectionPage(),
               '/home': (context) => const HomePage(),

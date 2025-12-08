@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:vidacoletiva/controllers/user_controller.dart';
 import 'package:vidacoletiva/data/models/project_model.dart';
 import 'package:vidacoletiva/data/services/project_service.dart';
+import 'package:vidacoletiva/services/analytics_service.dart';
 
 import '../data/models/media_model.dart';
 
@@ -98,6 +99,9 @@ class ProjectController extends ChangeNotifier {
 
       projects.add(p);
       notifyListeners();
+
+      // Log analytics event
+      AnalyticsService.logProjectCreation(name);
 
       // Show success message including project name
       ScaffoldMessenger.of(context).showSnackBar(

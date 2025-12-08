@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:vidacoletiva/data/models/user_model.dart';
 import 'package:vidacoletiva/data/repositories/user_repository.dart';
 import 'package:vidacoletiva/data/services/login_service.dart';
+import 'package:vidacoletiva/services/analytics_service.dart';
 
 class UserController extends ChangeNotifier {
   /// Aceita o termo de consentimento e salva no backend
@@ -12,6 +13,7 @@ class UserController extends ChangeNotifier {
     await _userRepository.updateUser(user!.toJson());
     notifyListeners();
   }
+
   final LoginService _loginService;
   final UserRepository _userRepository = UserRepository();
 
@@ -40,7 +42,7 @@ class UserController extends ChangeNotifier {
 
   String getDisplayName() {
     if (FirebaseAuth.instance.currentUser == null) return "";
-    return FirebaseAuth.instance.currentUser!.displayName?? "-";
+    return FirebaseAuth.instance.currentUser!.displayName ?? "-";
   }
 
   getPhotoUrl() {
@@ -60,11 +62,16 @@ class UserController extends ChangeNotifier {
     var acc = await _loginService.signInWithGoogle();
     isLoading = false;
     if (acc != null) {
-       await Future.wait([
+      await Future.wait([
         _userRepository.getSelf().then((value) => user = value),
         _userRepository.getIsSuperAdmin().then((value) => isSuperAdmin = value)
       ]);
       isLogged = true;
+      // Log analytics event
+      var firebaseUser = FirebaseAuth.instance.currentUser;
+      if (firebaseUser != null) {
+        AnalyticsService.logUserLogin(firebaseUser.uid);
+      }
     } else {
       isLogged = false;
     }
@@ -82,6 +89,11 @@ class UserController extends ChangeNotifier {
         _userRepository.getIsSuperAdmin().then((value) => isSuperAdmin = value)
       ]);
       isLogged = true;
+      // Log analytics event
+      var firebaseUser = FirebaseAuth.instance.currentUser;
+      if (firebaseUser != null) {
+        AnalyticsService.logUserLogin(firebaseUser.uid);
+      }
     } else {
       isLogged = false;
     }
@@ -90,6 +102,8 @@ class UserController extends ChangeNotifier {
 
   logout() async {
     isLogged = false;
+    // Log analytics event
+    AnalyticsService.logUserLogout();
     await _loginService.signOut();
     notifyListeners();
   }

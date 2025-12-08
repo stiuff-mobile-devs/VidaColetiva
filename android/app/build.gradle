@@ -33,7 +33,7 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace "br.uff.vidacoletiva"
-    compileSdkVersion 35
+    compileSdkVersion 36
 //    ndkVersion flutter.ndkVersion
     ndkVersion = "27.0.12077973"
 
@@ -85,6 +85,8 @@ android {
         }
         debug {
             signingConfig signingConfigs.debug
+            // Enable Firebase Analytics debug view
+            debuggable true
         }
     }
 }

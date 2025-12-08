@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:vidacoletiva/app.dart';
 import 'package:vidacoletiva/firebase_options.dart';
@@ -9,6 +10,12 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Initialize Firebase Analytics
+  FirebaseAnalytics analytics = FirebaseAnalytics.instance;
+
+  // Enable debug view - remove this line in production!
+  await analytics.setAnalyticsCollectionEnabled(true);
 
   await initilizeDependencies();
 

@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "231627897335-7493m21b9tj933djin917vsepr2f93hp.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "br.uff.vidacoletiva",
+            "certificate_hash": "bc9b2716ee808f5f635d972b6327a8ba03bd7995"
+          }
+        },
+        {
           "client_id": "231627897335-cjv7nj7q0n20ceo05bfugmn7tjg3jksf.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
