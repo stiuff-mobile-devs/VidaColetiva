@@ -4,6 +4,7 @@ import 'package:vidacoletiva/controllers/user_controller.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:vidacoletiva/utils/eula.dart';
+import 'package:vidacoletiva/services/report_service.dart';
 
 import '../assets/colour_pallete.dart';
 
@@ -67,6 +68,9 @@ Widget mainDrawer(BuildContext context) {
           _showEula(context);
         }),
         // textButton('Avaliar app', context, () {}),
+        textButton('Gerar relatório', context, () {
+          _generateMediaReport(context);
+        }),
         if (userController.isSuperAdmin)
           textButton('Administração', context, () {
             Navigator.pushNamed(context, '/admin');
@@ -263,4 +267,162 @@ Future<void> _showEula(BuildContext context) async {
       ],
     ),
   );
+}
+
+Future<void> _generateMediaReport(BuildContext context) async {
+  final outerContext = context;
+
+  // Mostrar diálogo de carregamento
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => AlertDialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircularProgressIndicator(color: AppColors.primaryOrange),
+          const SizedBox(height: 16),
+          Text(
+            'Gerando relatório...',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppColors.darkGreen,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+
+  try {
+    final reportService = ReportService();
+    final file = await reportService.generateMediaReport();
+
+    // Fechar diálogo de carregamento
+    Navigator.of(outerContext).pop();
+
+    // Mostrar diálogo de sucesso
+    showDialog(
+      context: outerContext,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        title: Text(
+          'Sucesso!',
+          style: TextStyle(
+            color: AppColors.darkGreen,
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Relatório gerado com sucesso!',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Arquivo: ${file.path.split('/').last}',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.black54,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Local: ${file.path}',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.black45,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              try {
+                final reportService = ReportService();
+                await reportService.shareReport(file);
+              } catch (e) {
+                ScaffoldMessenger.of(outerContext).showSnackBar(
+                  SnackBar(content: Text('Erro ao compartilhar: $e')),
+                );
+              }
+            },
+            child: Text(
+              'Compartilhar',
+              style: TextStyle(
+                color: AppColors.primaryOrange,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              Navigator.of(outerContext).pop(); // Fechar o drawer
+            },
+            child: Text(
+              'OK',
+              style: TextStyle(
+                color: AppColors.primaryOrange,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  } catch (e) {
+    // Fechar diálogo de carregamento
+    Navigator.of(outerContext).pop();
+
+    // Mostrar diálogo de erro
+    showDialog(
+      context: outerContext,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        title: Text(
+          'Erro',
+          style: TextStyle(
+            color: Colors.red,
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: Text(
+          'Erro ao gerar relatório: $e',
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.black87,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              'OK',
+              style: TextStyle(
+                color: AppColors.primaryOrange,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
