@@ -216,4 +216,177 @@ class ReportService {
       throw Exception('Erro ao compartilhar relatório: $e');
     }
   }
+
+  /// Gera um relatório em Excel com as mídias apenas do usuário logado
+  /// Colunas: Projeto, ID do Projeto, Título do Evento, Mídias (Nome), Links das Mídias
+  Future<File> generateUserMediaReport(String userId) async {
+    try {
+      // Buscar eventos apenas do usuário logado
+      final eventsSnapshot = await _firebaseFirestore
+          .collection('events')
+          .where('user_id', isEqualTo: userId)
+          .get();
+
+      // Criar um mapa de eventos com mídias
+      Map<String, Map<String, dynamic>> eventMediaMap = {};
+
+      for (var eventDoc in eventsSnapshot.docs) {
+        final eventData = eventDoc.data();
+        final projectId = eventData['project_id'] ?? 'Sem projeto';
+        final title = eventData['title'] ?? 'Sem título';
+        final mediaList = eventData['media'] ?? [];
+
+        // Se não tem mídia, pula
+        if (mediaList.isEmpty) continue;
+
+        // Buscar dados do projeto
+        String projectName = 'Sem projeto';
+        try {
+          final projectDoc = await _firebaseFirestore
+              .collection('projects')
+              .doc(projectId)
+              .get();
+          if (projectDoc.exists) {
+            projectName = projectDoc['name'] ?? 'Sem projeto';
+          }
+        } catch (e) {
+          print('Erro ao buscar projeto: $e');
+        }
+
+        // Adicionar ao mapa (agrupando mídias por evento)
+        String eventKey = eventDoc.id;
+        if (!eventMediaMap.containsKey(eventKey)) {
+          eventMediaMap[eventKey] = {
+            'projectId': projectId,
+            'projectName': projectName,
+            'title': title,
+            'eventId': eventDoc.id,
+            'mediaList': [],
+          };
+        }
+
+        // Adicionar todas as mídias com links
+        for (var media in mediaList) {
+          String mediaName = media is String ? media : media.toString();
+          String mediaPath = '/$userId/${eventDoc.id}/$mediaName';
+
+          // Obter URL de download do Firebase Storage
+          String downloadUrl = '';
+          try {
+            final ref = _firebaseStorage.ref(mediaPath);
+
+            // Verificar se o arquivo existe antes de obter a URL
+            await ref.getMetadata();
+            downloadUrl = await ref.getDownloadURL();
+          } catch (e) {
+            print('Erro ao obter URL da mídia $mediaPath: $e');
+            // Tentar sem a barra no início
+            try {
+              String alternativePath = '$userId/${eventDoc.id}/$mediaName';
+              final ref = _firebaseStorage.ref(alternativePath);
+              await ref.getMetadata();
+              downloadUrl = await ref.getDownloadURL();
+            } catch (e2) {
+              print('Erro alternativo: $e2');
+              downloadUrl = 'Mídia não encontrada no Storage';
+            }
+          }
+
+          eventMediaMap[eventKey]!['mediaList'].add({
+            'name': mediaName,
+            'url': downloadUrl,
+          });
+        }
+      }
+
+      // Criar Excel
+      var excel = Excel.createExcel();
+      Sheet sheetObject = excel['Sheet1'];
+
+      // Adicionar cabeçalho (sem Usuário e ID do Usuário)
+      var headerRow = [
+        'Projeto',
+        'ID do Projeto',
+        'Título do Evento',
+        'Mídias (Nome)',
+        'Links das Mídias',
+      ];
+
+      for (int i = 0; i < headerRow.length; i++) {
+        var cell = sheetObject.cell(
+          CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0),
+        );
+        cell.value = TextCellValue(headerRow[i]);
+        // Estilizar cabeçalho
+        cell.cellStyle = CellStyle(bold: true);
+      }
+
+      // Adicionar dados
+      int rowIndex = 1;
+      eventMediaMap.forEach((eventKey, eventData) {
+        String projectName = eventData['projectName'];
+        String projectId = eventData['projectId'];
+        String title = eventData['title'];
+        List<dynamic> mediaList = eventData['mediaList'];
+
+        // Agrupar todas as mídias na mesma célula
+        String mediaNames =
+            mediaList.map((m) => m['name'].toString()).join('\n');
+
+        String mediaUrls = mediaList
+            .map((m) => m['url'].toString())
+            .where((url) =>
+                url.isNotEmpty && url != 'Mídia não encontrada no Storage')
+            .join('\n\n');
+
+        var cells = [
+          TextCellValue(projectName),
+          TextCellValue(projectId),
+          TextCellValue(title),
+          TextCellValue(mediaNames),
+          TextCellValue(mediaUrls),
+        ];
+
+        for (int i = 0; i < cells.length; i++) {
+          var cell = sheetObject.cell(
+            CellIndex.indexByColumnRow(columnIndex: i, rowIndex: rowIndex),
+          );
+          cell.value = cells[i];
+
+          // Habilitar quebra de linha para as colunas de mídia
+          if (i >= 3) {
+            cell.cellStyle = CellStyle(
+              textWrapping: TextWrapping.WrapText,
+            );
+          }
+        }
+
+        rowIndex++;
+      });
+
+      // Ajustar largura das colunas
+      sheetObject.setColumnWidth(0, 25);
+      sheetObject.setColumnWidth(1, 20);
+      sheetObject.setColumnWidth(2, 30);
+      sheetObject.setColumnWidth(3, 40);
+      sheetObject.setColumnWidth(4, 60);
+
+      // Salvar arquivo temporário para compartilhar
+      var bytes = excel.save();
+      var dir = await getTemporaryDirectory();
+      final now = DateTime.now();
+      String fileName =
+          'Relatorio_Pessoal_${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year}_${now.hour.toString().padLeft(2, '0')}h${now.minute.toString().padLeft(2, '0')}.xlsx';
+      File file = File('${dir.path}/$fileName');
+
+      if (bytes != null) {
+        await file.writeAsBytes(bytes);
+      }
+
+      return file;
+    } catch (e) {
+      print('Erro ao gerar relatório do usuário: $e');
+      throw Exception('Erro ao gerar relatório do usuário: $e');
+    }
+  }
 }

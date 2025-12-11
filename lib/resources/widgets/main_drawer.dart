@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:vidacoletiva/controllers/user_controller.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter/services.dart';
@@ -61,6 +62,9 @@ Widget mainDrawer(BuildContext context) {
           Navigator.pushNamed(context, '/profile');
         }),
         // textButton('Preferências', context, () {}),
+        textButton('Meu Relatório', context, () {
+          _generateUserMediaReport(context);
+        }),
         textButton('Sobre o app', context, () {
           _showAboutApp(context);
         }),
@@ -268,6 +272,129 @@ Future<void> _showEula(BuildContext context) async {
       ],
     ),
   );
+}
+
+Future<void> _generateUserMediaReport(BuildContext context) async {
+  final outerContext = context;
+
+  // Mostrar diálogo de carregamento
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => AlertDialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircularProgressIndicator(color: AppColors.primaryOrange),
+          const SizedBox(height: 16),
+          Text(
+            'Gerando seu relatório...',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppColors.darkGreen,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+
+  try {
+    final userId = FirebaseAuth.instance.currentUser!.uid;
+    final reportService = ReportService();
+    final file = await reportService.generateUserMediaReport(userId);
+
+    // Fechar diálogo de carregamento
+    Navigator.of(outerContext).pop();
+
+    // Mostrar diálogo de sucesso
+    showDialog(
+      context: outerContext,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        title: Text(
+          'Sucesso!',
+          style: TextStyle(
+            color: AppColors.darkGreen,
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: Text(
+          'Seu relatório foi gerado com sucesso!',
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.black87,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              try {
+                final reportService = ReportService();
+                await reportService.shareReport(file);
+              } catch (e) {
+                ScaffoldMessenger.of(outerContext).showSnackBar(
+                  SnackBar(content: Text('Erro ao compartilhar: $e')),
+                );
+              }
+            },
+            child: Text(
+              'Compartilhar',
+              style: TextStyle(
+                color: AppColors.primaryOrange,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  } catch (e) {
+    // Fechar diálogo de carregamento
+    Navigator.of(outerContext).pop();
+
+    // Mostrar diálogo de erro
+    showDialog(
+      context: outerContext,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        title: Text(
+          'Erro',
+          style: TextStyle(
+            color: Colors.red,
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: Text(
+          'Erro ao gerar seu relatório: $e',
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.black87,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              'OK',
+              style: TextStyle(
+                color: AppColors.primaryOrange,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 Future<void> _generateMediaReport(BuildContext context) async {
