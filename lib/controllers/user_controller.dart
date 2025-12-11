@@ -30,10 +30,17 @@ class UserController extends ChangeNotifier {
     var ac = await _loginService.signInSilently();
     if (ac != null) {
       isLogged = true;
-      await Future.wait([
-        _userRepository.getSelf().then((value) => user = value),
-        _userRepository.getIsSuperAdmin().then((value) => isSuperAdmin = value)
-      ]);
+      try {
+        await Future.wait([
+          _userRepository.getSelf().then((value) => user = value),
+          _userRepository
+              .getIsSuperAdmin()
+              .then((value) => isSuperAdmin = value)
+        ]);
+      } catch (e) {
+        // Em caso de regra negada ou erro, segue sem admin
+        isSuperAdmin = false;
+      }
       getPhotoUrl();
     }
     isLoading = false;
@@ -62,10 +69,16 @@ class UserController extends ChangeNotifier {
     var acc = await _loginService.signInWithGoogle();
     isLoading = false;
     if (acc != null) {
-      await Future.wait([
-        _userRepository.getSelf().then((value) => user = value),
-        _userRepository.getIsSuperAdmin().then((value) => isSuperAdmin = value)
-      ]);
+      try {
+        await Future.wait([
+          _userRepository.getSelf().then((value) => user = value),
+          _userRepository
+              .getIsSuperAdmin()
+              .then((value) => isSuperAdmin = value)
+        ]);
+      } catch (e) {
+        isSuperAdmin = false;
+      }
       isLogged = true;
       // Log analytics event
       var firebaseUser = FirebaseAuth.instance.currentUser;
@@ -84,10 +97,16 @@ class UserController extends ChangeNotifier {
     var acc = await _loginService.signInWithApple();
     isLoading = false;
     if (acc != null) {
-      await Future.wait([
-        _userRepository.getSelf().then((value) => user = value),
-        _userRepository.getIsSuperAdmin().then((value) => isSuperAdmin = value)
-      ]);
+      try {
+        await Future.wait([
+          _userRepository.getSelf().then((value) => user = value),
+          _userRepository
+              .getIsSuperAdmin()
+              .then((value) => isSuperAdmin = value)
+        ]);
+      } catch (e) {
+        isSuperAdmin = false;
+      }
       isLogged = true;
       // Log analytics event
       var firebaseUser = FirebaseAuth.instance.currentUser;

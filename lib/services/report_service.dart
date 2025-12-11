@@ -142,7 +142,11 @@ class ReportService {
         String mediaNames =
             mediaList.map((m) => m['name'].toString()).join('\n');
 
-        String mediaUrls = mediaList.map((m) => m['url'].toString()).join('\n');
+        String mediaUrls = mediaList
+            .map((m) => m['url'].toString())
+            .where((url) =>
+                url.isNotEmpty && url != 'Mídia não encontrada no Storage')
+            .join('\n\n');
 
         var cells = [
           TextCellValue(userName),
@@ -183,8 +187,9 @@ class ReportService {
       // Salvar arquivo temporário para compartilhar
       var bytes = excel.save();
       var dir = await getTemporaryDirectory();
+      final now = DateTime.now();
       String fileName =
-          'relatorio_medias_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+          'Relatorio_Geral_${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year}_${now.hour.toString().padLeft(2, '0')}h${now.minute.toString().padLeft(2, '0')}.xlsx';
       File file = File('${dir.path}/$fileName');
 
       if (bytes != null) {

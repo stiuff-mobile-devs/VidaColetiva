@@ -10,34 +10,48 @@ class UserRepository {
   UserRepository();
 
   Future<UserModel> getSelf() async {
-    DocumentReference<Map<String, dynamic>> documentReference =
-        _firebaseFirestore.doc('/users/${_firebaseAuth.currentUser!.uid}');
-    var user = documentReference
-        .get()
-        .then((value) => UserModel.fromJson(value.data()!));
-    return user;
+    final user = _firebaseAuth.currentUser;
+    if (user == null) {
+      throw StateError('Usuário não autenticado');
+    }
+    final documentReference = _firebaseFirestore.doc('/users/${user.uid}');
+    final snapshot = await documentReference.get();
+    if (!snapshot.exists || snapshot.data() == null) {
+      throw StateError('Dados do usuário não encontrados');
+    }
+    return UserModel.fromJson(snapshot.data()!);
   }
 
   Future<UserModel> createSelf() async {
-    DocumentReference<Map<String,dynamic>> documentReference = FirebaseFirestore.instance
-        .doc('/users/${FirebaseAuth.instance.currentUser!.uid}');
-    DocumentSnapshot<Map<String,dynamic>> documentSnapshot = await documentReference.get();
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      throw StateError('Usuário não autenticado');
+    }
+    final DocumentReference<Map<String, dynamic>> documentReference =
+        FirebaseFirestore.instance.doc('/users/${user.uid}');
+    final DocumentSnapshot<Map<String, dynamic>> documentSnapshot =
+        await documentReference.get();
     if (documentSnapshot.exists) {
       return UserModel.fromJson(documentSnapshot.data()!);
     } else {
       documentReference.set({
         'created_at': DateTime.now(),
         'updated_at': DateTime.now(),
-        'email': FirebaseAuth.instance.currentUser!.email,
+        'email': user.email,
       });
-      return UserModel.fromJson({'email': FirebaseAuth.instance.currentUser!.email});
+      return UserModel.fromJson({'email': user.email});
     }
   }
 
   Future<bool> getIsSuperAdmin() async {
-    DocumentReference<Map<String, dynamic>> documentReference = _firebaseFirestore
-        .doc('/users/${_firebaseAuth.currentUser!.uid}/private/private');
-    DocumentSnapshot<Map<String, dynamic>> documentSnapshot = await documentReference.get();
+    final user = _firebaseAuth.currentUser;
+    if (user == null) {
+      return false;
+    }
+    final DocumentReference<Map<String, dynamic>> documentReference =
+        _firebaseFirestore.doc('/users/${user.uid}/private/private');
+    final DocumentSnapshot<Map<String, dynamic>> documentSnapshot =
+        await documentReference.get();
     if (documentSnapshot.exists) {
       return documentSnapshot.data()!['isSuperAdmin'] ?? false;
     }
@@ -45,8 +59,12 @@ class UserRepository {
   }
 
   Future<void> updateUser(Map<String, dynamic> data) async {
-    DocumentReference<Map<String, dynamic>> documentReference =
-        _firebaseFirestore.doc('/users/${_firebaseAuth.currentUser!.uid}');
+    final user = _firebaseAuth.currentUser;
+    if (user == null) {
+      throw StateError('Usuário não autenticado');
+    }
+    final DocumentReference<Map<String, dynamic>> documentReference =
+        _firebaseFirestore.doc('/users/${user.uid}');
     await documentReference.update(data);
   }
 }

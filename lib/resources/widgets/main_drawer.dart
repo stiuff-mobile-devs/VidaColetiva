@@ -68,9 +68,10 @@ Widget mainDrawer(BuildContext context) {
           _showEula(context);
         }),
         // textButton('Avaliar app', context, () {}),
-        textButton('Gerar relatório', context, () {
-          _generateMediaReport(context);
-        }),
+        if (userController.isSuperAdmin)
+          textButton('Gerar relatório', context, () {
+            _generateMediaReport(context);
+          }),
         if (userController.isSuperAdmin)
           textButton('Administração', context, () {
             Navigator.pushNamed(context, '/admin');
@@ -318,40 +319,17 @@ Future<void> _generateMediaReport(BuildContext context) async {
             fontWeight: FontWeight.w700,
           ),
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Relatório gerado com sucesso!',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Arquivo: ${file.path.split('/').last}',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.black54,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Local: ${file.path}',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.black45,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-          ],
+        content: Text(
+          'Relatório gerado com sucesso!',
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.black87,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () async {
+              Navigator.of(context).pop();
               try {
                 final reportService = ReportService();
                 await reportService.shareReport(file);
@@ -363,19 +341,6 @@ Future<void> _generateMediaReport(BuildContext context) async {
             },
             child: Text(
               'Compartilhar',
-              style: TextStyle(
-                color: AppColors.primaryOrange,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              Navigator.of(outerContext).pop(); // Fechar o drawer
-            },
-            child: Text(
-              'OK',
               style: TextStyle(
                 color: AppColors.primaryOrange,
                 fontWeight: FontWeight.w600,
