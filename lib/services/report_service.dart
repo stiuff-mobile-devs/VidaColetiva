@@ -2,10 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:excel/excel.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
-import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class ReportService {
   final FirebaseFirestore _firebaseFirestore = FirebaseFirestore.instance;
+  final FirebaseStorage _firebaseStorage = FirebaseStorage.instance;
 
   /// Gera um relatório em Excel com as mídias separadas por usuário
   /// Colunas: Usuário, ID do Usuário, Projeto, ID do Projeto, Título do Evento, Tipo de Mídia
@@ -26,7 +28,7 @@ class ReportService {
         final mediaList = eventData['media'] ?? [];
 
         // Se não tem mídia, pula
-        if ((mediaList as List).isEmpty) continue;
+        if (mediaList.isEmpty) continue;
 
         // Buscar dados do usuário
         String userName = 'Desconhecido';
@@ -54,18 +56,50 @@ class ReportService {
           print('Erro ao buscar projeto: $e');
         }
 
-        // Adicionar ao mapa
-        if (!userMediaMap.containsKey(userId)) {
-          userMediaMap[userId] = {'userName': userName, 'medias': []};
-        }
-
-        // Processar cada mídia
-        for (var media in mediaList as List) {
-          userMediaMap[userId]!['medias'].add({
+        // Adicionar ao mapa (agrupando mídias por evento)
+        String eventKey = '${userId}_${eventDoc.id}';
+        if (!userMediaMap.containsKey(eventKey)) {
+          userMediaMap[eventKey] = {
+            'userName': userName,
+            'userId': userId,
             'projectId': projectId,
             'projectName': projectName,
             'title': title,
-            'mediaName': media is String ? media : media.toString(),
+            'eventId': eventDoc.id,
+            'mediaList': [],
+          };
+        }
+
+        // Adicionar todas as mídias com links
+        for (var media in mediaList) {
+          String mediaName = media is String ? media : media.toString();
+          String mediaPath = '/$userId/${eventDoc.id}/$mediaName';
+
+          // Obter URL de download do Firebase Storage
+          String downloadUrl = '';
+          try {
+            final ref = _firebaseStorage.ref(mediaPath);
+
+            // Verificar se o arquivo existe antes de obter a URL
+            await ref.getMetadata();
+            downloadUrl = await ref.getDownloadURL();
+          } catch (e) {
+            print('Erro ao obter URL da mídia $mediaPath: $e');
+            // Tentar sem a barra no início
+            try {
+              String alternativePath = '$userId/${eventDoc.id}/$mediaName';
+              final ref = _firebaseStorage.ref(alternativePath);
+              await ref.getMetadata();
+              downloadUrl = await ref.getDownloadURL();
+            } catch (e2) {
+              print('Erro alternativo: $e2');
+              downloadUrl = 'Mídia não encontrada no Storage';
+            }
+          }
+
+          userMediaMap[eventKey]!['mediaList'].add({
+            'name': mediaName,
+            'url': downloadUrl,
           });
         }
       }
@@ -81,7 +115,8 @@ class ReportService {
         'Projeto',
         'ID do Projeto',
         'Título do Evento',
-        'Arquivo de Mídia',
+        'Mídias (Nome)',
+        'Links das Mídias',
       ];
 
       for (int i = 0; i < headerRow.length; i++) {
@@ -95,29 +130,45 @@ class ReportService {
 
       // Adicionar dados
       int rowIndex = 1;
-      userMediaMap.forEach((userId, userData) {
-        String userName = userData['userName'];
-        List<dynamic> medias = userData['medias'];
+      userMediaMap.forEach((eventKey, eventData) {
+        String userName = eventData['userName'];
+        String userId = eventData['userId'];
+        String projectName = eventData['projectName'];
+        String projectId = eventData['projectId'];
+        String title = eventData['title'];
+        List<dynamic> mediaList = eventData['mediaList'];
 
-        for (var media in medias) {
-          var cells = [
-            TextCellValue(userName),
-            TextCellValue(userId),
-            TextCellValue(media['projectName']?.toString() ?? 'N/A'),
-            TextCellValue(media['projectId']?.toString() ?? 'N/A'),
-            TextCellValue(media['title']?.toString() ?? 'N/A'),
-            TextCellValue(media['mediaName']?.toString() ?? 'N/A'),
-          ];
+        // Agrupar todas as mídias na mesma célula
+        String mediaNames =
+            mediaList.map((m) => m['name'].toString()).join('\n');
 
-          for (int i = 0; i < cells.length; i++) {
-            var cell = sheetObject.cell(
-              CellIndex.indexByColumnRow(columnIndex: i, rowIndex: rowIndex),
+        String mediaUrls = mediaList.map((m) => m['url'].toString()).join('\n');
+
+        var cells = [
+          TextCellValue(userName),
+          TextCellValue(userId),
+          TextCellValue(projectName),
+          TextCellValue(projectId),
+          TextCellValue(title),
+          TextCellValue(mediaNames),
+          TextCellValue(mediaUrls),
+        ];
+
+        for (int i = 0; i < cells.length; i++) {
+          var cell = sheetObject.cell(
+            CellIndex.indexByColumnRow(columnIndex: i, rowIndex: rowIndex),
+          );
+          cell.value = cells[i];
+
+          // Habilitar quebra de linha para as colunas de mídia
+          if (i >= 5) {
+            cell.cellStyle = CellStyle(
+              textWrapping: TextWrapping.WrapText,
             );
-            cell.value = cells[i];
           }
-
-          rowIndex++;
         }
+
+        rowIndex++;
       });
 
       // Ajustar largura das colunas
@@ -126,7 +177,8 @@ class ReportService {
       sheetObject.setColumnWidth(2, 25);
       sheetObject.setColumnWidth(3, 20);
       sheetObject.setColumnWidth(4, 30);
-      sheetObject.setColumnWidth(5, 25);
+      sheetObject.setColumnWidth(5, 40);
+      sheetObject.setColumnWidth(6, 60);
 
       // Salvar arquivo temporário para compartilhar
       var bytes = excel.save();
@@ -146,18 +198,14 @@ class ReportService {
     }
   }
 
-  /// Compartilha o arquivo de relatório usando Intent nativo do Android
+  /// Compartilha o arquivo de relatório usando o pacote share_plus
   Future<void> shareReport(File file) async {
     try {
-      const platform = MethodChannel('com.vidacoletiva.app/share');
-
-      await platform.invokeMethod('shareFile', {
-        'filePath': file.path,
-        'fileName': file.path.split('/').last,
-      });
-    } on PlatformException catch (e) {
-      print('Erro ao compartilhar relatório: ${e.message}');
-      throw Exception('Erro ao compartilhar relatório: ${e.message}');
+      final xFile = XFile(file.path);
+      await Share.shareXFiles(
+        [xFile],
+        text: 'Relatório de Mídias - Vida Coletiva',
+      );
     } catch (e) {
       print('Erro ao compartilhar relatório: $e');
       throw Exception('Erro ao compartilhar relatório: $e');
