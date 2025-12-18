@@ -122,7 +122,7 @@ Future<void> _showAboutApp(BuildContext context) async {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'O aplicativo é desenvolvido pelo laboratório no.ar da UFF e conta com a parceria da STI‑UFF.',
+            'O aplicativo é desenvolvido pelo laboratório no.ar da UFF, conta com a parceria da STI‑UFF e teve apoio financeiro da Faperj e da UFF',
             style: TextStyle(
               fontSize: bodyFont,
               color: Colors.black87,

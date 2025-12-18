@@ -30,18 +30,25 @@ class AllEventsOnProjectPage extends StatelessWidget {
   }
 
   Widget eventList(DateTime date, List<EventModel> events) {
+    // Filtrar apenas os eventos da data específica
+    List<EventModel> eventsOnDate = events.where((event) {
+      return event.createdAt!.year == date.year &&
+          event.createdAt!.month == date.month &&
+          event.createdAt!.day == date.day;
+    }).toList();
+
     return Column(children: [
       Padding(
         padding: const EdgeInsets.all(4.0),
         child: Text(
-          '${date.day.toString().padLeft(2,'0')}/${date.month.toString().padLeft(2,'0')}/${date.year}',
+          '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}',
           style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
         ),
       ),
-      ...events.map((e) => EventCard(
+      ...eventsOnDate.map((e) => EventCard(
             event: e,
           ))
     ]);
