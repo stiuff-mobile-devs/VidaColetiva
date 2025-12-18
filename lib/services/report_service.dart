@@ -10,7 +10,7 @@ class ReportService {
   final FirebaseStorage _firebaseStorage = FirebaseStorage.instance;
 
   /// Gera um relatório em Excel com as mídias separadas por usuário
-  /// Colunas: Usuário, ID do Usuário, Projeto, ID do Projeto, Título do Evento, Tipo de Mídia
+  /// Colunas: Usuário, ID do Usuário, Projeto, ID do Projeto, Título do Evento, Texto, Mídia (Nome), Links das Mídias
   Future<File> generateMediaReport() async {
     try {
       // Buscar todos os eventos
@@ -26,9 +26,10 @@ class ReportService {
         final projectId = eventData['project_id'] ?? 'Sem projeto';
         final title = eventData['title'] ?? 'Sem título';
         final mediaList = eventData['media'] ?? [];
+        final text = (eventData['text'] ?? '').toString();
 
-        // Se não tem mídia, pula
-        if (mediaList.isEmpty) continue;
+        // Se não tem mídia e nem texto, pula
+        if (mediaList.isEmpty && text.trim().isEmpty) continue;
 
         // Buscar dados do usuário
         String userName = 'Desconhecido';
@@ -66,6 +67,7 @@ class ReportService {
             'projectName': projectName,
             'title': title,
             'eventId': eventDoc.id,
+            'text': text,
             'mediaList': [],
           };
         }
@@ -115,6 +117,7 @@ class ReportService {
         'Projeto',
         'ID do Projeto',
         'Título do Evento',
+        'Texto',
         'Mídias (Nome)',
         'Links das Mídias',
       ];
@@ -136,6 +139,7 @@ class ReportService {
         String projectName = eventData['projectName'];
         String projectId = eventData['projectId'];
         String title = eventData['title'];
+        String text = (eventData['text'] ?? '').toString();
         List<dynamic> mediaList = eventData['mediaList'];
 
         // Agrupar todas as mídias na mesma célula
@@ -154,6 +158,7 @@ class ReportService {
           TextCellValue(projectName),
           TextCellValue(projectId),
           TextCellValue(title),
+          TextCellValue(text),
           TextCellValue(mediaNames),
           TextCellValue(mediaUrls),
         ];
@@ -164,7 +169,7 @@ class ReportService {
           );
           cell.value = cells[i];
 
-          // Habilitar quebra de linha para as colunas de mídia
+          // Habilitar quebra de linha para Texto e colunas de mídia
           if (i >= 5) {
             cell.cellStyle = CellStyle(
               textWrapping: TextWrapping.WrapText,
@@ -181,8 +186,9 @@ class ReportService {
       sheetObject.setColumnWidth(2, 25);
       sheetObject.setColumnWidth(3, 20);
       sheetObject.setColumnWidth(4, 30);
-      sheetObject.setColumnWidth(5, 40);
-      sheetObject.setColumnWidth(6, 60);
+      sheetObject.setColumnWidth(5, 60); // Texto
+      sheetObject.setColumnWidth(6, 40); // Mídias (Nome)
+      sheetObject.setColumnWidth(7, 60); // Links das Mídias
 
       // Salvar arquivo temporário para compartilhar
       var bytes = excel.save();
@@ -218,7 +224,7 @@ class ReportService {
   }
 
   /// Gera um relatório em Excel com as mídias apenas do usuário logado
-  /// Colunas: Projeto, ID do Projeto, Título do Evento, Mídias (Nome), Links das Mídias
+  /// Colunas: Projeto, ID do Projeto, Título do Evento, Texto, Mídias (Nome), Links das Mídias
   Future<File> generateUserMediaReport(String userId) async {
     try {
       // Buscar eventos apenas do usuário logado
@@ -235,9 +241,10 @@ class ReportService {
         final projectId = eventData['project_id'] ?? 'Sem projeto';
         final title = eventData['title'] ?? 'Sem título';
         final mediaList = eventData['media'] ?? [];
+        final text = (eventData['text'] ?? '').toString();
 
-        // Se não tem mídia, pula
-        if (mediaList.isEmpty) continue;
+        // Se não tem mídia e nem texto, pula
+        if (mediaList.isEmpty && text.trim().isEmpty) continue;
 
         // Buscar dados do projeto
         String projectName = 'Sem projeto';
@@ -261,6 +268,7 @@ class ReportService {
             'projectName': projectName,
             'title': title,
             'eventId': eventDoc.id,
+            'text': text,
             'mediaList': [],
           };
         }
@@ -308,6 +316,7 @@ class ReportService {
         'Projeto',
         'ID do Projeto',
         'Título do Evento',
+        'Texto',
         'Mídias (Nome)',
         'Links das Mídias',
       ];
@@ -327,6 +336,7 @@ class ReportService {
         String projectName = eventData['projectName'];
         String projectId = eventData['projectId'];
         String title = eventData['title'];
+        String text = (eventData['text'] ?? '').toString();
         List<dynamic> mediaList = eventData['mediaList'];
 
         // Agrupar todas as mídias na mesma célula
@@ -343,6 +353,7 @@ class ReportService {
           TextCellValue(projectName),
           TextCellValue(projectId),
           TextCellValue(title),
+          TextCellValue(text),
           TextCellValue(mediaNames),
           TextCellValue(mediaUrls),
         ];
@@ -368,8 +379,9 @@ class ReportService {
       sheetObject.setColumnWidth(0, 25);
       sheetObject.setColumnWidth(1, 20);
       sheetObject.setColumnWidth(2, 30);
-      sheetObject.setColumnWidth(3, 40);
-      sheetObject.setColumnWidth(4, 60);
+      sheetObject.setColumnWidth(3, 60); // Texto
+      sheetObject.setColumnWidth(4, 40); // Mídias (Nome)
+      sheetObject.setColumnWidth(5, 60); // Links das Mídias
 
       // Salvar arquivo temporário para compartilhar
       var bytes = excel.save();

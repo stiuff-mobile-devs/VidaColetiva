@@ -73,7 +73,7 @@ Widget mainDrawer(BuildContext context) {
         }),
         // textButton('Avaliar app', context, () {}),
         if (userController.isSuperAdmin)
-          textButton('Gerar relatório', context, () {
+          textButton('Gerar relatório geral', context, () {
             _generateMediaReport(context);
           }),
         if (userController.isSuperAdmin)
