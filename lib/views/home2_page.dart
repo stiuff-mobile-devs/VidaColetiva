@@ -9,8 +9,15 @@ import 'package:vidacoletiva/resources/widgets/custom_buttons.dart';
 import 'package:vidacoletiva/views/home/carousel_card.dart';
 import 'package:vidacoletiva/views/home/projects_carousel.dart';
 
-class Home2Page extends StatelessWidget {
+class Home2Page extends StatefulWidget {
   const Home2Page({super.key});
+
+  @override
+  State<Home2Page> createState() => _Home2PageState();
+}
+
+class _Home2PageState extends State<Home2Page> {
+  int _currentIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +67,7 @@ class Home2Page extends StatelessWidget {
 
     for (int i = 0; i < projectsController.projects.length; i++) {
       carouselImages.add(
-        carouselImage(context, projectsController.projects[i]),
+        carouselImage(context, projectsController.projects[i], i),
       );
     }
 
@@ -72,11 +79,16 @@ class Home2Page extends StatelessWidget {
             autoPlayInterval: const Duration(seconds: 5),
             autoPlayAnimationDuration: const Duration(milliseconds: 1000),
             clipBehavior: Clip.hardEdge,
-            enlargeCenterPage: true),
+            enlargeCenterPage: true,
+            onPageChanged: (index, reason) {
+              setState(() {
+                _currentIndex = index;
+              });
+            }),
         items: carouselImages);
   }
 
-  Widget carouselImage(BuildContext context, ProjectModel project) {
+  Widget carouselImage(BuildContext context, ProjectModel project, int index) {
     return GestureDetector(
       onTap: () {
         final ProjectController projectController =
@@ -87,6 +99,8 @@ class Home2Page extends StatelessWidget {
       child: CarouselCard(
         imageUrl: project.media != null ? project.mediaModel?.getUrl() : null,
         title: project.name ?? 'Projeto',
+        heroTag: project.id ?? project.name ?? 'Projeto',
+        enableHero: index == _currentIndex,
       ),
     );
   }

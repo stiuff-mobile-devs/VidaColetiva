@@ -76,7 +76,7 @@ class _ProjectPageState extends State<ProjectPage> {
                   }
                   return Hero(
                     tag:
-                        "${projectController.project?.name ?? 'projeto'}_image",
+                        "${projectController.project?.id ?? projectController.project?.name ?? 'projeto'}_image",
                     child: Container(
                       height: 300,
                       decoration: BoxDecoration(

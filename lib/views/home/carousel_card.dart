@@ -3,11 +3,15 @@ import 'package:flutter/material.dart';
 class CarouselCard extends StatelessWidget {
   final Future<String>? imageUrl;
   final String title;
+  final String? heroTag; // Unique base for Hero tag
+  final bool enableHero;
 
   const CarouselCard({
     Key? key,
     required this.imageUrl,
     required this.title,
+    this.heroTag,
+    this.enableHero = true,
   }) : super(key: key);
 
   @override
@@ -43,19 +47,21 @@ class CarouselCard extends StatelessWidget {
                             child: const Center(),
                           );
                         }
+                        final imageWidget = Image.network(
+                          snapshot.data ?? '',
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              color: Colors.grey[200], // Placeholder color
+                              child: const Center(),
+                            );
+                          },
+                          fit: BoxFit.cover,
+                        );
+                        if (!enableHero) return imageWidget;
                         return Hero(
-                          tag: "${title}_image",
-                          child: Image.network(
-                            snapshot.data ?? '',
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Container(
-                                color: Colors.grey[200], // Placeholder color
-                                child: const Center(),
-                              );
-                            },
-                            fit: BoxFit.cover,
-                          ),
+                          tag: "${(heroTag ?? title)}_image",
+                          child: imageWidget,
                         );
                       })
                   : Container(
