@@ -32,3 +32,5 @@ android/key.properties
 
 # FVM Version Cache
 .fvm/
+ios/GoogleService-Info.plist
+ios/Runner/GoogleService-Info.plist
