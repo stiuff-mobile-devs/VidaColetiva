@@ -1,12 +1,6 @@
-import 'dart:convert';
-import 'dart:io';
-import 'dart:math';
-import 'package:crypto/crypto.dart';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:vidacoletiva/data/repositories/user_repository.dart';
 import 'package:vidacoletiva/utils/authenticated_client.dart';
 
@@ -39,18 +33,18 @@ class LoginService {
       debugPrint("onSignIn: $err");
     }
 
-    authClient = AuthenticatedClient({"Authorization": "Bearer ${b.accessToken}"});
+    authClient =
+        AuthenticatedClient({"Authorization": "Bearer ${b.accessToken}"});
 
     userRepository.createSelf();
   }
 
-  onAppleSignIn(UserCredential auth) async {
+  Future<void> onAppleSignIn(UserCredential auth) async {
     try {
       if (auth.user != null) {
         await auth.user!.reload();
         firebaseAuth = FirebaseAuth.instance;
-        // Optionally, you can assign the user to firebaseAuth.currentUser
-        // firebaseAuth.currentUser = auth.user; // Not needed, handled internally
+        debugPrint("Apple sign-in processado com sucesso");
       }
     } catch (err) {
       debugPrint("onAppleSignIn: $err");
@@ -70,86 +64,26 @@ class LoginService {
     return _account;
   }
 
-  signInWithApple() async {
-    debugPrint("Attempting Apple sign-in...");
-    UserCredential auth;
-    if (Platform.isIOS) {
-      debugPrint("Iphone...");
-      auth = await _whenPlatformApple();
-    } else {
-      var appleProvider = AppleAuthProvider();
-      auth = await FirebaseAuth.instance.signInWithProvider(appleProvider);
-    }
+  Future<UserCredential?> signInWithApple() async {
+    try {
+      final appleProvider = AppleAuthProvider();
+      appleProvider.addScope('email');
+      appleProvider.addScope('name');
 
-    if (auth.user != null) {
-      debugPrint("Apple sign-in successful: ${auth.user?.email}");
-      await onAppleSignIn(auth);
-    } else {
-      debugPrint("Apple sign-in failed or cancelled.");
-    }
-    return auth;
-  }
+      final auth = await firebaseAuth.signInWithProvider(appleProvider);
 
-  Future<UserCredential> _whenPlatformApple() async {
-    String generateNonce([int length = 32]) {
-      const charset =
-          '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
-      final random = Random.secure();
-      return List.generate(
-          length, (_) => charset[random.nextInt(charset.length)]).join();
-    }
-
-    String sha256ofString(String input) {
-      final bytes = utf8.encode(input);
-      final digest = sha256.convert(bytes);
-      return digest.toString();
-    }
-
-    final rawNonce = generateNonce();
-    final nonce = sha256ofString(rawNonce);
-
-    final credential = await SignInWithApple.getAppleIDCredential(
-        scopes: [
-          AppleIDAuthorizationScopes.email,
-          AppleIDAuthorizationScopes.fullName,
-        ],
-        webAuthenticationOptions: WebAuthenticationOptions(
-            clientId: "br.uff.vidacoletivaid",
-            redirectUri: Uri.parse("https://vida-coletiva-736b4.firebaseapp.com/__/auth/handler")),
-        nonce: nonce);
-
-    // Create an `OAuthCredential` from the credential returned by Apple.
-    final appleOauthProvider = OAuthProvider(
-      "apple.com",
-    );
-
-    appleOauthProvider.setScopes([
-      'email',
-      'name',
-    ]);
-
-    final oauthCredential = appleOauthProvider.credential(
-      idToken: credential.identityToken,
-      rawNonce: rawNonce,
-    );
-
-    UserCredential auth =
-        await FirebaseAuth.instance.signInWithCredential(oauthCredential);
-    if (auth.user != null) {
       if (auth.user != null) {
-        if (auth.user?.email == null && credential.email != null) {
-          await auth.user?.updateEmail(credential.email!);
-        }
-
-        if (auth.user?.displayName == null &&
-            credential.givenName != null &&
-            credential.familyName != null) {
-          await auth.user?.updateDisplayName(
-              '${credential.givenName} ${credential.familyName}');
-        }
+        debugPrint("Apple sign-in successful: ${auth.user?.email}");
+        await onAppleSignIn(auth);
+        return auth;
       }
+
+      debugPrint("Apple sign-in failed or cancelled.");
+      return null;
+    } catch (err) {
+      debugPrint("Erro de Login Apple: $err");
+      return null;
     }
-    return auth;
   }
 
   Future<GoogleSignInAccount?> signInSilently() async {
@@ -170,8 +104,9 @@ class LoginService {
   }
 
   Future<bool> requestGoogleDriveScope() async {
-    return await googleSignIn.requestScopes( scopes + [
-      'https://www.googleapis.com/auth/drive.file',
-    ]);
+    return await googleSignIn.requestScopes(scopes +
+        [
+          'https://www.googleapis.com/auth/drive.file',
+        ]);
   }
 }
