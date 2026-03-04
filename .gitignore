@@ -34,3 +34,6 @@ android/key.properties
 .fvm/
 ios/GoogleService-Info.plist
 ios/Runner/GoogleService-Info.plist
+ios/Runner/GoogleService-Info.plist
+ios/Runner/GoogleService-Info.plist
+ios/GoogleService-Info.plist
