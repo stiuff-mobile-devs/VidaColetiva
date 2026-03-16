@@ -7,14 +7,18 @@ import 'package:vidacoletiva/injection_setup.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+
+  // Proteção contra erro de duplicidade no iOS
+  if (Firebase.apps.isEmpty) {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  }
 
   // Initialize Firebase Analytics
   FirebaseAnalytics analytics = FirebaseAnalytics.instance;
 
-  // Enable debug view - remove this line in production!
+  // Enable debug view - opcional, o Firebase já habilita por padrão se configurado no console
   await analytics.setAnalyticsCollectionEnabled(true);
 
   await initilizeDependencies();
