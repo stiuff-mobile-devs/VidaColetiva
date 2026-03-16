@@ -5,15 +5,31 @@ import 'package:vidacoletiva/app.dart';
 import 'package:vidacoletiva/firebase_options.dart';
 import 'package:vidacoletiva/injection_setup.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+Future<void> _initializeFirebaseSafely() async {
+  try {
+    Firebase.app();
+    return;
+  } on FirebaseException catch (error) {
+    if (error.code != 'no-app') {
+      rethrow;
+    }
+  }
 
-  // Proteção contra erro de duplicidade no iOS
-  if (Firebase.apps.isEmpty) {
+  try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+  } on FirebaseException catch (error) {
+    if (error.code != 'duplicate-app') {
+      rethrow;
+    }
   }
+}
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await _initializeFirebaseSafely();
 
   // Initialize Firebase Analytics
   FirebaseAnalytics analytics = FirebaseAnalytics.instance;
