@@ -15,6 +15,26 @@ class ProjectPage extends StatefulWidget {
 }
 
 class _ProjectPageState extends State<ProjectPage> {
+  bool _isValidHttpUrl(String? value) {
+    if (value == null || value.trim().isEmpty) return false;
+    final uri = Uri.tryParse(value.trim());
+    return uri != null &&
+        (uri.scheme == 'http' || uri.scheme == 'https') &&
+        (uri.host.isNotEmpty);
+  }
+
+  Widget _projectFallbackImage() {
+    return Container(
+      height: 300,
+      decoration: const BoxDecoration(
+        image: DecorationImage(
+          image: AssetImage('lib/resources/assets/images/stock-image.png'),
+          fit: BoxFit.cover,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final ProjectController projectController =
@@ -71,9 +91,18 @@ class _ProjectPageState extends State<ProjectPage> {
             ? FutureBuilder(
                 future: projectController.project?.mediaModel?.getUrl(),
                 builder: (context, snapshot) {
-                  if (snapshot.data == null) {
-                    return const CircularProgressIndicator();
+                  if (snapshot.connectionState != ConnectionState.done) {
+                    return const SizedBox(
+                      height: 300,
+                      child: Center(child: CircularProgressIndicator()),
+                    );
                   }
+
+                  final url = snapshot.data?.toString();
+                  if (snapshot.hasError || !_isValidHttpUrl(url)) {
+                    return _projectFallbackImage();
+                  }
+
                   return Hero(
                     tag:
                         "${projectController.project?.id ?? projectController.project?.name ?? 'projeto'}_image",
@@ -81,7 +110,7 @@ class _ProjectPageState extends State<ProjectPage> {
                       height: 300,
                       decoration: BoxDecoration(
                         image: DecorationImage(
-                          image: NetworkImage(snapshot.data.toString()),
+                          image: NetworkImage(url!.trim()),
                           fit: BoxFit.cover,
                         ),
                       ),
@@ -89,16 +118,7 @@ class _ProjectPageState extends State<ProjectPage> {
                   );
                 },
               )
-            : Container(
-                height: 300,
-                decoration: const BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage(
-                        'lib/resources/assets/images/stock-image.png'),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
+            : _projectFallbackImage(),
         Positioned(
           bottom: 0,
           left: 0,

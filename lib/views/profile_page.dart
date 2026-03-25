@@ -16,11 +16,21 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
 
+  bool _isValidHttpUrl(String? value) {
+    if (value == null || value.trim().isEmpty) return false;
+    final uri = Uri.tryParse(value.trim());
+    return uri != null &&
+        (uri.scheme == 'http' || uri.scheme == 'https') &&
+        (uri.host.isNotEmpty);
+  }
+
   @override
   Widget build(BuildContext context) {
     UserController userController = Provider.of<UserController>(context);
     return Scaffold(
-      appBar: addAppBar(context, 'Perfil', onPressed: (){Navigator.pop(context);}),
+      appBar: addAppBar(context, 'Perfil', onPressed: () {
+        Navigator.pop(context);
+      }),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -30,7 +40,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 padding: EdgeInsets.symmetric(
                     vertical: MediaQuery.of(context).size.height / 30),
                 child: Text(
-                  _firebaseAuth.currentUser!.displayName?? "-",
+                  _firebaseAuth.currentUser!.displayName ?? "-",
                   style: TextStyle(
                       color: AppColors.darkGreen,
                       fontWeight: FontWeight.bold,
@@ -45,16 +55,31 @@ class _ProfilePageState extends State<ProfilePage> {
                 borderRadius: BorderRadius.circular(100),
               ),
               child: ClipOval(
-                child: Image.network(
-                  userController.photoUrl ?? "",
-                  fit: BoxFit.cover,
-                  width: MediaQuery.of(context).size.width/2,
-                  height: MediaQuery.of(context).size.width/2,
-                ),
+                child: _isValidHttpUrl(userController.photoUrl)
+                    ? Image.network(
+                        userController.photoUrl!.trim(),
+                        fit: BoxFit.cover,
+                        width: MediaQuery.of(context).size.width / 2,
+                        height: MediaQuery.of(context).size.width / 2,
+                        errorBuilder: (context, error, stackTrace) {
+                          return SizedBox(
+                            width: MediaQuery.of(context).size.width / 2,
+                            height: MediaQuery.of(context).size.width / 2,
+                            child: const Icon(Icons.person, size: 72),
+                          );
+                        },
+                      )
+                    : SizedBox(
+                        width: MediaQuery.of(context).size.width / 2,
+                        height: MediaQuery.of(context).size.width / 2,
+                        child: const Icon(Icons.person, size: 72),
+                      ),
               ),
             ),
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: MediaQuery.of(context).size.width/20, vertical: MediaQuery.of(context).size.height/25),
+              padding: EdgeInsets.symmetric(
+                  horizontal: MediaQuery.of(context).size.width / 20,
+                  vertical: MediaQuery.of(context).size.height / 25),
               child: TextButton(
                 onPressed: () {
                   Navigator.pushNamed(context, '/profile_data');
