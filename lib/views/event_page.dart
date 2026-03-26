@@ -12,6 +12,14 @@ class EventPage extends StatelessWidget {
 
   const EventPage({super.key, required this.event});
 
+  bool _isValidHttpUrl(String? value) {
+    if (value == null || value.trim().isEmpty) return false;
+    final uri = Uri.tryParse(value.trim());
+    return uri != null &&
+        (uri.scheme == 'http' || uri.scheme == 'https') &&
+        (uri.host.isNotEmpty);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -60,9 +68,15 @@ class EventPage extends StatelessWidget {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.done &&
               snapshot.hasData) {
+            if (!_isValidHttpUrl(snapshot.data)) {
+              return const SizedBox.shrink();
+            }
             return Image.network(
-              snapshot.data!,
+              snapshot.data!.trim(),
               fit: BoxFit.fitWidth,
+              errorBuilder: (context, error, stackTrace) {
+                return const SizedBox.shrink();
+              },
             );
           } else {
             return const CircularProgressIndicator();
@@ -95,7 +109,13 @@ class EventPage extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final url = snapshot.data!;
+          final url = snapshot.data!.trim();
+          if (!_isValidHttpUrl(url)) {
+            return const Center(
+              child: Icon(Icons.broken_image_outlined, size: 48),
+            );
+          }
+
           final lower = url.toLowerCase();
           final isAudio = lower.endsWith('.mp3') ||
               lower.endsWith('.wav') ||

@@ -14,6 +14,25 @@ class CarouselCard extends StatelessWidget {
     this.enableHero = true,
   }) : super(key: key);
 
+  bool _isValidHttpUrl(String? value) {
+    if (value == null || value.trim().isEmpty) return false;
+    final uri = Uri.tryParse(value.trim());
+    return uri != null &&
+        (uri.scheme == 'http' || uri.scheme == 'https') &&
+        (uri.host.isNotEmpty);
+  }
+
+  Widget _fallbackAsset() {
+    return Container(
+      decoration: const BoxDecoration(
+        image: DecorationImage(
+          image: AssetImage('lib/resources/assets/images/stock-image.png'),
+          fit: BoxFit.cover,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
@@ -47,14 +66,22 @@ class CarouselCard extends StatelessWidget {
                             child: const Center(),
                           );
                         }
+                        if (snapshot.hasError ||
+                            !_isValidHttpUrl(snapshot.data)) {
+                          return _fallbackAsset();
+                        }
+
                         final imageWidget = Image.network(
-                          snapshot.data ?? '',
+                          snapshot.data!.trim(),
                           loadingBuilder: (context, child, loadingProgress) {
                             if (loadingProgress == null) return child;
                             return Container(
                               color: Colors.grey[200], // Placeholder color
                               child: const Center(),
                             );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            return _fallbackAsset();
                           },
                           fit: BoxFit.cover,
                         );
@@ -64,15 +91,7 @@ class CarouselCard extends StatelessWidget {
                           child: imageWidget,
                         );
                       })
-                  : Container(
-                      decoration: const BoxDecoration(
-                        image: DecorationImage(
-                          image: AssetImage(
-                              'lib/resources/assets/images/stock-image.png'),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ), // Placeholder color),
+                  : _fallbackAsset(), // Placeholder color),
             ),
             Positioned(
               bottom: 0,
