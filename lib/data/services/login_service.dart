@@ -36,7 +36,7 @@ class LoginService {
     authClient =
         AuthenticatedClient({"Authorization": "Bearer ${b.accessToken}"});
 
-    userRepository.createSelf();
+    await userRepository.createSelf();
   }
 
   Future<void> onAppleSignIn(UserCredential auth) async {
@@ -49,7 +49,7 @@ class LoginService {
     } catch (err) {
       debugPrint("onAppleSignIn: $err");
     }
-    userRepository.createSelf();
+    await userRepository.createSelf();
   }
 
   Future<GoogleSignInAccount?> signInWithGoogle() async {

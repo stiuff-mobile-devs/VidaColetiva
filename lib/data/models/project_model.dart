@@ -16,8 +16,13 @@ class ProjectModel {
   String? ownerId;
   DateTime? createdAt;
 
-
-  ProjectModel({this.id, this.name, this.description, this.institution, this.target, this.isOpen});
+  ProjectModel(
+      {this.id,
+      this.name,
+      this.description,
+      this.institution,
+      this.target,
+      this.isOpen});
 
   ProjectModel.fromJson(Map<String, dynamic> json) {
     id = json['id'];
@@ -29,7 +34,7 @@ class ProjectModel {
     isOpen = json['is_open'];
     ownerId = json['owner_id'];
     if (json["media"] != null) {
-      mediaModel = ProjectMediaModel.fromJson(this, json["media"])..getUrl();
+      mediaModel = ProjectMediaModel.fromJson(this, json["media"]);
     }
   }
 
@@ -48,7 +53,8 @@ class ProjectModel {
     return json;
   }
 
-  ProjectModel.fromQueryDocSnapshot(QueryDocumentSnapshot<Map<String, dynamic>> queryDocumentSnapshot) {
+  ProjectModel.fromQueryDocSnapshot(
+      QueryDocumentSnapshot<Map<String, dynamic>> queryDocumentSnapshot) {
     id = queryDocumentSnapshot.id;
     Map data = queryDocumentSnapshot.data();
     name = data["name"];
@@ -61,11 +67,12 @@ class ProjectModel {
     ownerId = data["owner_id"];
     if (data["media"] != null) {
       media = data["media"];
-      mediaModel = ProjectMediaModel.fromFirebase(this, data["media"])..getUrl();
+      mediaModel = ProjectMediaModel.fromFirebase(this, data["media"]);
     }
   }
 
-  ProjectModel.fromDocSnapshot(DocumentSnapshot<Map<String, dynamic>> documentSnapshot) {
+  ProjectModel.fromDocSnapshot(
+      DocumentSnapshot<Map<String, dynamic>> documentSnapshot) {
     id = documentSnapshot.id;
     Map? data = documentSnapshot.data()!;
     name = data["name"];
@@ -76,5 +83,4 @@ class ProjectModel {
     isOpen = data["is_open"];
     banned = data["banned"] ?? [];
   }
-
 }

@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
 import 'package:vidacoletiva/data/models/user_model.dart';
 
 class UserRepository {
@@ -34,7 +33,7 @@ class UserRepository {
     if (documentSnapshot.exists) {
       return UserModel.fromJson(documentSnapshot.data()!);
     } else {
-      documentReference.set({
+      await documentReference.set({
         'created_at': DateTime.now(),
         'updated_at': DateTime.now(),
         'email': user.email,

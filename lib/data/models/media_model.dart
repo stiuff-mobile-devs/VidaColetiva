@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:vidacoletiva/data/models/project_model.dart';
@@ -91,6 +92,9 @@ class MediaModel {
     if (url != null) {
       return url!;
     }
+    if (FirebaseAuth.instance.currentUser == null || userID == null) {
+      return Future.value('');
+    }
     url = FirebaseStorage.instance
         .ref('$userID/${event.id}/$name')
         .getDownloadURL();
@@ -98,6 +102,9 @@ class MediaModel {
   }
 
   Future<Uint8List?> getBytes() {
+    if (FirebaseAuth.instance.currentUser == null || userID == null) {
+      return Future.value(null);
+    }
     return FirebaseStorage.instance.ref('$userID/${event.id}/$name').getData();
   }
 }
@@ -142,7 +149,9 @@ class ProjectMediaModel {
     if (url != null) {
       return url!;
     }
-    print('$userID/${project.id}/$name');
+    if (FirebaseAuth.instance.currentUser == null || userID == null) {
+      return Future.value('');
+    }
     url = FirebaseStorage.instance
         .ref('$userID/${project.id}/$name')
         .getDownloadURL();
@@ -150,6 +159,9 @@ class ProjectMediaModel {
   }
 
   Future<Uint8List?> getBytes() {
+    if (FirebaseAuth.instance.currentUser == null || userID == null) {
+      return Future.value(null);
+    }
     return FirebaseStorage.instance
         .ref('$userID/${project.id}/$name')
         .getData();

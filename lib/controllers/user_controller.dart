@@ -121,10 +121,13 @@ class UserController extends ChangeNotifier {
 
   logout() async {
     isLogged = false;
+    user = null;
+    photoUrl = null;
+    isSuperAdmin = false;
+    notifyListeners();
     // Log analytics event
     AnalyticsService.logUserLogout();
     await _loginService.signOut();
-    notifyListeners();
   }
 
   save(Map<String, dynamic> userDelta) async {

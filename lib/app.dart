@@ -47,9 +47,14 @@ class VidaColetiva extends StatelessWidget {
           ChangeNotifierProvider<EventController>(
               create: (_) => EventController(GetIt.I.get())..init()),
           ChangeNotifierProxyProvider<UserController, ProjectController>(
-            create: (_) => ProjectController(_, GetIt.I.get(), null),
-            update: (_, userController, __) =>
-                ProjectController(_, GetIt.I.get(), userController)..init(),
+            create: (context) =>
+                ProjectController(context, GetIt.I.get(), null),
+            update: (_, userController, projectController) {
+              final controller = projectController ??
+                  ProjectController(_, GetIt.I.get(), null);
+              controller.setUserController(userController);
+              return controller;
+            },
           ),
         ],
         builder: (context, child) {

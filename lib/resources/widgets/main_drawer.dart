@@ -84,7 +84,10 @@ Widget mainDrawer(BuildContext context) {
           textButton('Gerenciar usuários', context, () {
             Navigator.pushNamed(context, '/admin_users');
           }),
-        textButton('Sair', context, userController.logout),
+        textButton('Sair', context, () {
+          userController.logout();
+          Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+        }),
       ],
     ),
   );
@@ -230,7 +233,6 @@ Future<void> _showAboutApp(BuildContext context) async {
 }
 
 Future<void> _showEula(BuildContext context) async {
-  final outerContext = context;
   final double titleFont = 20;
   final double bodyFont = 16;
 
