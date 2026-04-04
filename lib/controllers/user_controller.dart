@@ -135,4 +135,14 @@ class UserController extends ChangeNotifier {
     await _userRepository.getSelf().then((value) => user = value);
     notifyListeners();
   }
+
+  Future<void> deleteAccount() async {
+    await _userRepository.deleteCurrentUserAccount();
+    await _loginService.signOut(disconnectGoogle: true);
+    isLogged = false;
+    user = null;
+    photoUrl = null;
+    isSuperAdmin = false;
+    notifyListeners();
+  }
 }

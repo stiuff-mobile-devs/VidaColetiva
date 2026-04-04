@@ -27,6 +27,7 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     UserController userController = Provider.of<UserController>(context);
+    final currentUser = _firebaseAuth.currentUser;
     return Scaffold(
       appBar: addAppBar(context, 'Perfil', onPressed: () {
         Navigator.pop(context);
@@ -40,7 +41,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 padding: EdgeInsets.symmetric(
                     vertical: MediaQuery.of(context).size.height / 30),
                 child: Text(
-                  _firebaseAuth.currentUser!.displayName ?? "-",
+                  currentUser?.displayName ?? "-",
                   style: TextStyle(
                       color: AppColors.darkGreen,
                       fontWeight: FontWeight.bold,

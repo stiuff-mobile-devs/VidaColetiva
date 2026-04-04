@@ -66,4 +66,30 @@ class UserRepository {
         _firebaseFirestore.doc('/users/${user.uid}');
     await documentReference.update(data);
   }
+
+  Future<void> deleteCurrentUserAccount() async {
+    final currentFirebaseUser = _firebaseAuth.currentUser;
+
+    if (currentFirebaseUser == null) {
+      throw Exception(
+          'Usuário não autenticado no Firebase. Faça login novamente.');
+    }
+
+    final String uid = currentFirebaseUser.uid;
+
+    if (uid.isEmpty) {
+      throw Exception('Não foi possível identificar a conta para exclusão.');
+    }
+
+    try {
+      await _firebaseFirestore.collection('users').doc(uid).delete();
+      await currentFirebaseUser.delete();
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'requires-recent-login') {
+        throw Exception(
+            'Por segurança, faça login novamente antes de excluir sua conta.');
+      }
+      throw Exception('Erro ao excluir conta: ${e.message ?? e.code}');
+    }
+  }
 }

@@ -98,8 +98,18 @@ class LoginService {
     return _account;
   }
 
-  Future<void> signOut() async {
-    await googleSignIn.signOut();
+  Future<void> signOut({bool disconnectGoogle = false}) async {
+    try {
+      if (disconnectGoogle) {
+        await googleSignIn.disconnect();
+      } else {
+        await googleSignIn.signOut();
+      }
+    } catch (_) {
+      await googleSignIn.signOut();
+    }
+    _account = null;
+    authClient = null;
     await FirebaseAuth.instance.signOut();
   }
 
