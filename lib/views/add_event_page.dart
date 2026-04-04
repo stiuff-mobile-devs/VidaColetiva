@@ -26,6 +26,7 @@ class _AddEventPageState extends State<AddEventPage> {
   final AudioRecorder audioRecorder = AudioRecorder();
   final AudioPlayer audioPlayer = AudioPlayer();
   bool isRecording = false;
+  bool isRecordActionInProgress = false;
   bool playedOnce = false;
   String? recordingPath;
   String? title;
@@ -56,28 +57,63 @@ class _AddEventPageState extends State<AddEventPage> {
     mediaList.add(CreateMedia(f, f.path.split('.').last));
   }
 
-  recordAudio() async {
-    if (isRecording) {
-      String? filePath = await audioRecorder.stop();
-      if (filePath != null) {
-        setState(() {
-          isRecording = false;
-          recordingPath = filePath;
-        });
+  void _setAudioMedia(String filePath) {
+    mediaList.removeWhere(
+        (media) => media.fileName == 'audio' || media.mimeType == 'audio');
+    final audioMedia = CreateMedia(File(filePath), 'audio')..fileName = 'audio';
+    mediaList.add(audioMedia);
+  }
+
+  Future<void> recordAudio() async {
+    if (isRecordActionInProgress) return;
+    isRecordActionInProgress = true;
+
+    try {
+      final currentlyRecording = await audioRecorder.isRecording();
+      if (currentlyRecording) {
+        final String? filePath = await audioRecorder.stop();
+        if (filePath != null) {
+          _setAudioMedia(filePath);
+          if (!mounted) return;
+          setState(() {
+            isRecording = false;
+            recordingPath = filePath;
+            playedOnce = false;
+          });
+        }
+        return;
       }
-    } else {
-      if (await audioRecorder.hasPermission()) {
-        final Directory appDocumentsDir =
-            await getApplicationDocumentsDirectory();
-        final String filePath =
-            p.join(appDocumentsDir.path, 'recorded_audio.wav');
-        await audioRecorder.start(const RecordConfig(), path: filePath);
-        mediaList.add(CreateMedia(File(filePath), 'mp3'));
-        setState(() {
-          isRecording = true;
-          recordingPath = null;
-        });
+
+      if (!await audioRecorder.hasPermission()) {
+        return;
       }
+
+      final Directory appDocumentsDir =
+          await getApplicationDocumentsDirectory();
+      final String filePath =
+          p.join(appDocumentsDir.path, 'recorded_audio.m4a');
+      await audioRecorder.start(
+        const RecordConfig(
+          encoder: AudioEncoder.aacLc,
+          bitRate: 128000,
+          sampleRate: 44100,
+        ),
+        path: filePath,
+      );
+
+      if (!mounted) return;
+      setState(() {
+        isRecording = true;
+        recordingPath = null;
+        playedOnce = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível gravar o áudio agora.')),
+      );
+    } finally {
+      isRecordActionInProgress = false;
     }
   }
 
@@ -99,6 +135,13 @@ class _AddEventPageState extends State<AddEventPage> {
         });
       }
     });
+  }
+
+  @override
+  void dispose() {
+    audioPlayer.dispose();
+    audioRecorder.dispose();
+    super.dispose();
   }
 
   @override
@@ -141,23 +184,28 @@ class _AddEventPageState extends State<AddEventPage> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        audioPlayer.playing
-            ? buttonText(Icons.pause, 'Pausar áudio', () async {
-                await audioPlayer.pause();
-                setState(() {});
-              })
-            : buttonText(Icons.play_arrow, 'Escutar áudio', () async {
-                if (!playedOnce) {
-                  audioPlayer.setFilePath(recordingPath!);
-                  playedOnce = true;
-                }
-                await audioPlayer.play();
-                setState(() {});
-              }),
+        Expanded(
+          child: audioPlayer.playing
+              ? buttonText(Icons.pause, 'Pausar áudio', () async {
+                  await audioPlayer.pause();
+                  setState(() {});
+                })
+              : buttonText(Icons.play_arrow, 'Escutar áudio', () async {
+                  if (!playedOnce) {
+                    await audioPlayer.setFilePath(recordingPath!);
+                    playedOnce = true;
+                  }
+                  await audioPlayer.play();
+                  setState(() {});
+                }),
+        ),
         IconButton(
             onPressed: () {
               setState(() {
                 recordingPath = null;
+                playedOnce = false;
+                mediaList.removeWhere((media) =>
+                    media.fileName == 'audio' || media.mimeType == 'audio');
               });
             },
             icon: Icon(Icons.delete,
@@ -209,8 +257,14 @@ class _AddEventPageState extends State<AddEventPage> {
         Padding(
           padding: const EdgeInsets.only(bottom: 8),
           child: recordingPath == null
-              ? buttonText(isRecording ? Icons.stop : Icons.mic,
-                  isRecording ? 'Parar gravação' : 'Gravar áudio', recordAudio)
+              ? SizedBox(
+                  width: double.infinity,
+                  child: buttonText(
+                    isRecording ? Icons.stop : Icons.mic,
+                    isRecording ? 'Parar gravação' : 'Gravar áudio',
+                    recordAudio,
+                  ),
+                )
               : audioPlayerWidget(),
         ),
       ],
@@ -296,30 +350,24 @@ class _AddEventPageState extends State<AddEventPage> {
   }
 
   Widget buttonText(IconData icon, String text, void Function() onPressed) {
-    return Row(
-      children: [
-        Expanded(
-          child: ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              elevation: 5,
-              backgroundColor: AppColors.white,
-              side: const BorderSide(
-                color: AppColors.darkGreen,
-                width: 1,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(50),
-              ),
-            ),
-            icon: Icon(
-              icon,
-              color: icon == Icons.stop ? Colors.red : AppColors.darkGreen,
-            ),
-            onPressed: onPressed,
-            label: actionsText(text),
-          ),
+    return ElevatedButton.icon(
+      style: ElevatedButton.styleFrom(
+        elevation: 5,
+        backgroundColor: AppColors.white,
+        side: const BorderSide(
+          color: AppColors.darkGreen,
+          width: 1,
         ),
-      ],
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(50),
+        ),
+      ),
+      icon: Icon(
+        icon,
+        color: icon == Icons.stop ? Colors.red : AppColors.darkGreen,
+      ),
+      onPressed: isRecordActionInProgress ? null : onPressed,
+      label: actionsText(text),
     );
   }
 
