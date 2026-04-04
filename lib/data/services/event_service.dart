@@ -31,6 +31,12 @@ class EventService {
     }
     EventModel e = await _eventRepository.create(event);
 
+    if ((e.mediaList ?? []).isNotEmpty) {
+      e.mediaModelList = e.mediaList!
+          .map((mediaName) => MediaModel.fromFirebase(e, mediaName))
+          .toList();
+    }
+
     if (createMediaList.isNotEmpty) {
       List<Future<TaskSnapshot>> uploadTasks = [];
       for (var media in createMediaList) {
