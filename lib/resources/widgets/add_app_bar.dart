@@ -16,7 +16,11 @@ AppBar addAppBar(BuildContext context, String title,
       color: AppColors.white,
       onPressed: () {
         onBeforeNavigateBack?.call();
-        Navigator.pop(context);
+        if (Navigator.of(context).canPop()) {
+          Navigator.pop(context);
+        } else {
+          Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+        }
       },
     ),
     title: Text(

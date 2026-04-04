@@ -100,21 +100,22 @@ class _EditProfileDataState extends State<EditProfileData> {
       if (siglaEstado != null) 'state': siglaEstado,
       if (birthDate != null) 'born_at': birthDate,
     };
+    if (data.isEmpty) {
+      if (!mounted) return;
+      Navigator.of(context).pushReplacementNamed('/home');
+      return;
+    }
     await userController.save(data);
+    if (!mounted) return;
     Navigator.of(context).pushReplacementNamed('/home');
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: addAppBar(
-        context,
-        'Editar Perfil',
-        onPressed: () {
-          save();
-        },
-        isCheck: true
-      ),
+      appBar: addAppBar(context, 'Editar Perfil', onPressed: () {
+        save();
+      }, isCheck: true),
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -347,7 +348,7 @@ class _EditProfileDataState extends State<EditProfileData> {
               builder: (context, snapshot) {
                 if (!snapshot.hasData) return const CircularProgressIndicator();
                 List<Estado> listaEstados = snapshot.data!;
-                listaEstados.sort((a,b) {
+                listaEstados.sort((a, b) {
                   return a.nome!.compareTo(b.nome!);
                 });
 

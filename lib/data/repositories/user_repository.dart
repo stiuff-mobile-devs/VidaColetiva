@@ -62,6 +62,9 @@ class UserRepository {
     if (user == null) {
       throw StateError('Usuário não autenticado');
     }
+    if (data.isEmpty) {
+      return;
+    }
     final DocumentReference<Map<String, dynamic>> documentReference =
         _firebaseFirestore.doc('/users/${user.uid}');
     await documentReference.update(data);
