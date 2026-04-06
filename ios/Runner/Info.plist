@@ -4,6 +4,8 @@
 <dict>
     <key>NSMicrophoneUsageDescription</key>
     <string>O microfone é necessário para gravar um áudio</string>
+	<key>NSCameraUsageDescription</key>
+	<string>A câmera é necessária para registrar imagens no relato.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
